@@ -55,6 +55,81 @@ function addLog(text) {
   game.huntLogs = game.huntLogs.slice(0, 100);
 }
 
+// 1回・10回交配の共通実行処理
+function executeBreed(times = 1) {
+  if (!canAct()) return;
+
+  if (!selectedMale || !selectedFemale) {
+    alert("オスとメスを選択してください");
+    return;
+  }
+
+  const parentA = game.dinos.find(d => d.uid === selectedMale);
+  const parentB = game.dinos.find(d => d.uid === selectedFemale);
+  if (!parentA || !parentB) return;
+
+  const requiredPerOne = getRequiredCrystals(parentA, parentB);
+  const totalRequired = requiredPerOne * times;
+
+  if ((game.items?.breedCrystal ?? 0) < totalRequired) {
+    alert(`💎「生命の結晶」が足りません！（必要数: ${totalRequired}個）\n探索や遠征で結晶を集めてください。`);
+    return;
+  }
+
+  // 必要数ぶん消費
+  game.items.breedCrystal -= totalRequired;
+  game.breedingEggs ??= [];
+
+  const hatchMult = currentHatchMult();
+  const rarityCounts = { white: 0, blue: 0, purple: 0, rainbow: 0 };
+  let specialCount = 0;
+  let mutantCount = 0;
+  let lastChildName = "";
+
+  for (let i = 0; i < times; i++) {
+    const child = breed(parentA, parentB);
+    const egg = createBreedingEgg(child, hatchMult);
+    game.breedingEggs.push(egg);
+    game.stats.breedsDone++;
+
+    lastChildName = child.name;
+    rarityCounts[child.rarityType] = (rarityCounts[child.rarityType] ?? 0) + 1;
+    if (child.mutant) mutantCount++;
+    if (SPECIAL_BREEDS.some(b => b.result.id === child.speciesId)) {
+      specialCount++;
+    }
+  }
+
+  selectedMale = null;
+  selectedFemale = null;
+
+  if (times === 1) {
+    if (specialCount > 0) {
+      alert(`✨ 特殊交配成功！\n「${lastChildName}」が誕生予定です！`);
+      addLog(`✨ 特殊交配成功！「${lastChildName}」の卵を獲得した！`);
+    } else {
+      alert("交配卵ができました！");
+    }
+  } else {
+    // 10回交配の結果サマリーを作成
+    const summaryParts = [];
+    if (rarityCounts.rainbow > 0) summaryParts.push(`🌈 虹卵×${rarityCounts.rainbow}`);
+    if (rarityCounts.purple > 0) summaryParts.push(`🟣 紫卵×${rarityCounts.purple}`);
+    if (rarityCounts.blue > 0) summaryParts.push(`🔵 青卵×${rarityCounts.blue}`);
+    if (rarityCounts.white > 0) summaryParts.push(`⚪ 白卵×${rarityCounts.white}`);
+
+    const bonusLines = [];
+    if (specialCount > 0) bonusLines.push(`✨ 特殊交配成立：${specialCount}個`);
+    if (mutantCount > 0) bonusLines.push(`🧬 突然変異（MUTANT）確定：${mutantCount}個`);
+    const bonusText = bonusLines.length > 0 ? `\n\n${bonusLines.join("\n")}` : "";
+
+    addLog(`🥚 【${times}回連続交配】${summaryParts.join("・")} の交配卵を作成した！`);
+    alert(`🥚 ${times}回連続交配が完了しました！\n\n内訳：${summaryParts.join(" / ")}${bonusText}`);
+  }
+
+  update();
+}
+
 // 手持ちの恐竜も卵も0になった場合の救済措置（スターター卵の再選択を有効化）
 function rescueIfSoftlocked() {
   const noDinos = (game.dinos?.length ?? 0) === 0;
@@ -1485,6 +1560,75 @@ const handlers = {
 
     update();
   },
+  onHatchAllBreedingEggs: () => {
+    if (!canAct()) return;
+    const now = Date.now();
+    const readyEggs = game.breedingEggs.filter(e => (e.hatchAt ?? 0) <= now);
+    if (readyEggs.length === 0) return;
+
+    const highlights = [];
+    let normalCount = 0;
+
+    readyEggs.forEach(egg => {
+      const child = egg.child;
+      const stats = calculateStats(child);
+      if (child.currentHp == null || Number.isNaN(child.currentHp)) {
+        child.currentHp = stats.hp;
+      }
+
+      const isNewSpecies = !game.discoveredSpecies.includes(child.speciesId);
+      discoverSpecies(child);
+
+      game.dinos.push(child);
+      if (!game.activeDinoId) game.activeDinoId = child.uid;
+
+      game.stats.eggsHatched++;
+      if (child.mutant) game.stats.mutantsBorn++;
+      game.stats.maxGeneration = Math.max(game.stats.maxGeneration, child.generation ?? 0);
+
+      const trait = getTraitData(child.trait);
+      const sexMark = child.sex === "male" ? "♂️" : "♀️";
+      const rarityLabel = getRarityLabel(child.rarityType);
+      const isRareColor = child.color && child.color !== "normal";
+      const isRainbow = child.rarityType === "rainbow";
+
+      // 図鑑NEW・突然変異・希少体色・虹レアをピックアップ表示
+      if (isNewSpecies || child.mutant || isRareColor || isRainbow) {
+        const tags = [];
+        if (isNewSpecies) tags.push("📖NEW!");
+        if (child.mutant) tags.push("🧬MUTANT");
+        if (isRareColor) tags.push(getColorLabel(child.color));
+        const tagStr = tags.length > 0 ? `【${tags.join("・")}】` : "";
+
+        highlights.push(
+          `・${tagStr}${child.name}(F${child.generation ?? 0})${sexMark}（${rarityLabel} / ${getSizeLabel(child.size)} / ${trait.icon}${trait.name}）`
+        );
+      } else {
+        normalCount++;
+      }
+
+      addLog(
+        `🐣 交配卵から「${child.name}（F${child.generation ?? 0} / ${sexMark} / ${rarityLabel} / ${trait.icon}${trait.name}）」が誕生した！`
+      );
+      if (isNewSpecies) {
+        addLog(`📖 【図鑑新規登録】${child.name} を発見！`);
+      }
+    });
+
+    // 孵化済みの交配卵を除外
+    game.breedingEggs = game.breedingEggs.filter(e => (e.hatchAt ?? 0) > now);
+
+    const msgParts = [`🐣 ${readyEggs.length}個の交配卵が一斉に孵化しました！`];
+    if (highlights.length > 0) {
+      msgParts.push(`\n✨ 【注目個体】\n${highlights.join("\n")}`);
+    }
+    if (normalCount > 0) {
+      msgParts.push(`\n🦖 ほか ${normalCount}体 が仲間に加わりました！`);
+    }
+
+    alert(msgParts.join("\n"));
+    update();
+  },
   onSelectStarter: () => {
     const starterDino = hatchStarterEgg(game.starterEgg);
     game.dinos.push(starterDino);
@@ -1512,50 +1656,8 @@ function update() {
 
 // --- 固定ボタンのイベント登録 ---
 
-document.getElementById("breedBtn").addEventListener("click", () => {
-  if (!selectedMale || !selectedFemale) {
-    alert("オスとメスを選択してください");
-    return;
-  }
-
-  if ((game.items?.breedCrystal ?? 0) <= 0) {
-    alert("💎「生命の結晶」が足りません！\n探索に出かけて結晶を集めてください。");
-    return;
-  }
-
-  const parentA = game.dinos.find(d => d.uid === selectedMale);
-  const parentB = game.dinos.find(d => d.uid === selectedFemale);
-  if (!parentA || !parentB) return;
-
-  const required = getRequiredCrystals(parentA, parentB);
-  if ((game.items?.breedCrystal ?? 0) < required) {
-    alert(`💎「生命の結晶」が足りません！（必要数: ${required}個）\n探索に出かけて結晶を集めてください。`);
-    return;
-  }
-
-  // 必要数ぶん消費
-  game.items.breedCrystal -= required;
-
-  const child = breed(parentA, parentB);
-  const egg = createBreedingEgg(child, currentHatchMult());
-
-  game.breedingEggs ??= [];
-  game.breedingEggs.push(egg);
-  game.stats.breedsDone++;
-  selectedMale = null;
-  selectedFemale = null;
-
-  const isSpecial = SPECIAL_BREEDS.some(b => b.result.id === child.speciesId);
-
-  if (isSpecial) {
-    alert(`✨ 特殊交配成功！\n「${child.name}」が誕生予定です！`);
-    addLog(`✨ 特殊交配成功！「${child.name}」の卵を獲得した！`);
-  } else {
-    alert("交配卵ができました！");
-  }
-
-  update();
-});
+document.getElementById("breedBtn")?.addEventListener("click", () => executeBreed(1));
+document.getElementById("breed10Btn")?.addEventListener("click", () => executeBreed(10));
 
 // タブ切り替え処理
 document.querySelectorAll(".tab-btn").forEach(btn => {

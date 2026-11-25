@@ -134,11 +134,17 @@
   <div class="breeding-stage">
     <h2>🧬 恐竜交配</h2>
     <div id="parentInfo"></div>
-    <button id="breedBtn" class="btn-breed-main" disabled>🥚 交配して卵を作る</button>
+    <div class="breed-btn-group">
+      <button id="breedBtn" class="btn-breed-main" disabled>🥚 交配して卵を作る</button>
+      <button id="breed10Btn" class="btn-breed-10" disabled>🥚 10回交配</button>
+    </div>
   </div>
 
   <div class="eggs-section">
-    <h3>⏳ 交配卵（孵化待ち）</h3>
+    <div class="wild-egg-header">
+      <h3>⏳ 交配卵（孵化待ち）</h3>
+      <button id="hatchAllBreedingBtn" class="btn-hatch-all" disabled>🐣 すべて孵化させる</button>
+    </div>
     <div id="eggList"></div>
 
     <div class="wild-egg-header">

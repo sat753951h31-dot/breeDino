@@ -580,7 +580,20 @@ function renderDinoList(game, state, handlers) {
 // 5. 交配卵リスト
 function renderBreedingEggs(game, handlers) {
   const el = document.getElementById("eggList");
+  const hatchAllBtn = document.getElementById("hatchAllBreedingBtn");
   if (!el) return;
+
+  const now = Date.now();
+  const readyCount = game.breedingEggs.filter(egg => (egg.hatchAt ?? 0) <= now).length;
+
+  if (hatchAllBtn) {
+    hatchAllBtn.disabled = readyCount === 0;
+    hatchAllBtn.textContent = readyCount > 0
+      ? `🐣 孵化可能な交配卵をすべて孵化 (${readyCount}個)`
+      : "🐣 すべて孵化させる";
+    hatchAllBtn.onclick = handlers.onHatchAllBreedingEggs;
+  }
+
   el.innerHTML = "";
 
   if (game.breedingEggs.length === 0) {
@@ -589,7 +602,7 @@ function renderBreedingEggs(game, handlers) {
   }
 
   game.breedingEggs.forEach(egg => {
-    const remain = Math.max(0, Math.ceil((egg.hatchAt - Date.now()) / 1000));
+    const remain = Math.max(0, Math.ceil(((egg.hatchAt ?? 0) - now) / 1000));
     const rarity = egg.rarityType ?? egg.rarity ?? egg.child?.rarityType ?? "white";
     const size = egg.child?.size;
     const isReady = remain <= 0;
@@ -954,6 +967,7 @@ function createParentSlotHtml(dino, roleLabel, roleClass) {
 function renderBreedingStage(game, selectedMale, selectedFemale) {
   const parentInfo = document.getElementById("parentInfo");
   const breedBtn = document.getElementById("breedBtn");
+  const breed10Btn = document.getElementById("breed10Btn");
   if (!parentInfo) return;
 
   const male = game.dinos.find(d => d.uid === selectedMale);
@@ -967,8 +981,17 @@ function renderBreedingStage(game, selectedMale, selectedFemale) {
     breedBtn.textContent = !(male && female)
       ? "🥚 オスとメスを選択してください"
       : crystals >= requiredCrystals
-        ? `🥚 生命の結晶を ${requiredCrystals}個 使って交配する`
-        : `💎 生命の結晶が不足しています（必要: ${requiredCrystals}個）`;
+        ? `🥚 1回交配 (💎${requiredCrystals})`
+        : `💎 結晶不足 (必要: ${requiredCrystals}個)`;
+  }
+
+  if (breed10Btn) {
+    const req10 = requiredCrystals * 10;
+    const canBreed10 = male && female && crystals >= req10;
+    breed10Btn.disabled = !canBreed10;
+    breed10Btn.textContent = !(male && female)
+      ? "🥚 10回交配"
+      : `🥚 10回交配 (💎${req10})`;
   }
 
   // 特殊交配レシピに一致するかのプレビュー判定
@@ -1000,7 +1023,7 @@ function renderBreedingStage(game, selectedMale, selectedFemale) {
 
   parentInfo.innerHTML = `
     <div class="crystal-status ${crystals < requiredCrystals ? "is-empty" : ""}">
-      💎 生命の結晶：所持 <strong>${crystals}</strong> 個（今回の交配に <strong>${requiredCrystals}</strong> 個消費）
+      💎 生命の結晶：所持 <strong>${crystals}</strong> 個（1回の交配に <strong>${requiredCrystals}</strong> 個消費）
     </div>
     <div class="breeding-slots">
       ${createParentSlotHtml(male, "♂️ オス親", "slot-male")}
