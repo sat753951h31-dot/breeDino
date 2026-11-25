@@ -230,7 +230,6 @@ function renderActiveDino(game) {
 }
 
 // 3-B. 探索エリア選択＆出発ボタン描画（右カード上部）
-// 3-B. 探索エリア選択＆出発ボタン描画（右カード上部）
 function renderExploreBox(game, state, handlers) {
   if (document.activeElement?.id === "areaSelect") return;
 
@@ -256,7 +255,7 @@ function renderExploreBox(game, state, handlers) {
   const isBossCleared = game.bossCleared?.[game.selectedAreaLevel] ?? false;
 
   const currentLoop = game.worldLoop ?? 1;
-  const isFinalBossCleared = Boolean(game.bossCleared?.[5]);
+  const isFinalBossCleared = Boolean(game.bossCleared?.[6]);
 
   const currentArea = AREAS.find(a => a.level === game.selectedAreaLevel) ?? AREAS[0];
   const enemyDesc = currentArea.enemyDesc ?? "様々な恐竜";
