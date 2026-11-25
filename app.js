@@ -27,6 +27,12 @@ if (!game.starterEgg) {
   game.starterEgg = rollStarterEgg();
 }
 
+if (!Array.isArray(game.expeditions)) game.expeditions = [];
+game.expeditions = game.expeditions.filter(e => e && Number.isFinite(e.endAt));
+if (!game.expeditionDraft || typeof game.expeditionDraft.areaLevel !== "number") {
+  game.expeditionDraft = { areaLevel: 1, memberIds: [] };
+}
+
 game.dinos.forEach(dino => {
   const stats = calculateStats(dino);
   if (dino.currentHp == null || Number.isNaN(dino.currentHp)) {
@@ -1113,16 +1119,23 @@ function handleStartExpedition() {
   const maxTeams = unlockedLevels.length;
   game.expeditions ??= [];
 
-  if (game.expeditions.length >= maxTeams) {
-    alert(`同時に派遣できるチーム上限（${maxTeams}部隊）に達しています！\n新しいエリアの探索率を100%にすると枠が増えます。`);
+  if (maxTeams === 0) {
+    alert("遠征可能なエリアがまだ解放されていません！");
     return;
   }
 
-  const draft = game.expeditionDraft ?? { areaLevel: unlockedLevels[0] ?? 1, memberIds: [] };
-  const busyIds = getBusyExpeditionDinoIds();
+  if (game.expeditions.length >= maxTeams) {
+    alert(`同時に派遣できるチーム上限（${maxTeams}部隊）に達しています！`);
+    return;
+  }
 
-  // 有効な待機メンバーだけ抽出
-  const validMembers = draft.memberIds.filter(
+  const defaultLevel = unlockedLevels.at(0) ?? 1;
+  if (!game.expeditionDraft || typeof game.expeditionDraft.areaLevel !== "number") {
+    game.expeditionDraft = { areaLevel: defaultLevel, memberIds: [] };
+  }
+
+  const busyIds = getBusyExpeditionDinoIds();
+  const validMembers = (game.expeditionDraft.memberIds ?? []).filter(
     id => id !== game.activeDinoId && !busyIds.has(id) && game.dinos.some(d => d.uid === id)
   );
 
@@ -1131,8 +1144,12 @@ function handleStartExpedition() {
     return;
   }
 
-  const targetLevel = unlockedLevels.includes(draft.areaLevel) ? draft.areaLevel : unlockedLevels[0];
-  const course = AREA_EXPEDITIONS.find(c => c.areaLevel === targetLevel) ?? AREA_EXPEDITIONS[0];
+  const targetLevel = unlockedLevels.includes(game.expeditionDraft.areaLevel)
+    ? game.expeditionDraft.areaLevel
+    : defaultLevel;
+
+  const course = AREA_EXPEDITIONS.find(c => c.areaLevel === targetLevel) ?? AREA_EXPEDITIONS.at(0);
+  if (!course) return;
 
   game.expeditions.push({
     id: crypto.randomUUID(),
@@ -1143,7 +1160,6 @@ function handleStartExpedition() {
 
   if (validMembers.includes(selectedMale)) selectedMale = null;
   if (validMembers.includes(selectedFemale)) selectedFemale = null;
-  // 編成下書きをリセット
   game.expeditionDraft.memberIds = [];
 
   addLog(`🏕️ 遠征隊（${validMembers.length}体）が「${course.name}」へ出発した！`);
