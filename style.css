@@ -1,3 +1,12 @@
+/* スマホでのダブルタップズームを防止（連打時の誤拡大対策） */
+html,
+body,
+button,
+select,
+input {
+  touch-action: manipulation;
+}
+
 body{
   max-width:800px;
   margin:auto;

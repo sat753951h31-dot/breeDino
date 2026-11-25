@@ -1177,55 +1177,60 @@ function renderExpeditionTab(game, handlers) {
   });
 
   // 2. 新規チーム編成パネル
-  const busyIds = new Set();
-  activeExps.forEach(e => e.memberIds.forEach(id => busyIds.add(id)));
+  if (document.activeElement?.id !== "expAreaSelect") {
+    const busyIds = new Set();
+    activeExps.forEach(e => e.memberIds.forEach(id => busyIds.add(id)));
 
-  const draft = game.expeditionDraft ?? { areaLevel: unlockedLevels, memberIds: [] };
-  const selectedLevel = unlockedLevels.includes(draft.areaLevel) ? draft.areaLevel : unlockedLevels;
-  const validDraftMembers = draft.memberIds.filter(
-    id => id !== game.activeDinoId && !busyIds.has(id) && game.dinos.some(d => d.uid === id)
-  );
+    const draft = game.expeditionDraft ?? { areaLevel: unlockedLevels, memberIds: [] };
+    const selectedLevel = unlockedLevels.includes(draft.areaLevel) ? draft.areaLevel : unlockedLevels;
+    const validDraftMembers = draft.memberIds.filter(
+      id => id !== game.activeDinoId && !busyIds.has(id) && game.dinos.some(d => d.uid === id)
+    );
 
-  const luckyCount = validDraftMembers.filter(id => {
-    const d = game.dinos.find(dino => dino.uid === id);
-    return d?.trait === "hunter";
-  }).length;
-  const luckPercent = luckyCount * 10;
-  const canLaunch = activeExps.length < maxTeams && validDraftMembers.length > 0;
+    const canLaunch = activeExps.length < maxTeams && validDraftMembers.length > 0;
+    const luckyCount = validDraftMembers.filter(id => {
+      const d = game.dinos.find(dino => dino.uid === id);
+      return d?.trait === "hunter";
+    }).length;
+    const luckPercent = luckyCount * 10;
 
-  // 現在選択されているコースの情報を取得
-  const selectedCourse = AREA_EXPEDITIONS.find(item => item.areaLevel === selectedLevel) ?? AREA_EXPEDITIONS[0];
+    const selectedCourse = AREA_EXPEDITIONS.find(item => item.areaLevel === selectedLevel) ?? AREA_EXPEDITIONS;
 
-  // リストボックス内は短い表記にして横はみ出しを防ぐ
-  const optionsHtml = unlockedLevels.map(lv => {
-    const c = AREA_EXPEDITIONS.find(item => item.areaLevel === lv);
-    return `<option value="${lv}" ${lv === selectedLevel ? "selected" : ""}>${c.icon} ${c.name}</option>`;
-  }).join("");
+    const optionsHtml = unlockedLevels.map(lv => {
+      const c = AREA_EXPEDITIONS.find(item => item.areaLevel === lv);
+      return `<option value="${lv}" ${lv === selectedLevel ? "selected" : ""}>${c.icon} ${c.name}</option>`;
+    }).join("");
 
-  builderEl.innerHTML = `
-    <div class="exp-builder-box">
-      <div class="exp-builder-top">
-        <strong>🚩 新規チームの編成（選択中: ${validDraftMembers.length} / 3 体）</strong>
-        <span>空き部隊枠: <strong>${maxTeams - activeExps.length}</strong> 枠</span>
+    builderEl.innerHTML = `
+      <div class="exp-builder-box">
+        <div class="exp-builder-top">
+          <strong>🚩 新規チームの編成（選択中: ${validDraftMembers.length} / 3 体）</strong>
+          <span>空き部隊枠: <strong>${maxTeams - activeExps.length}</strong> 枠</span>
+        </div>
+        <div class="exp-luck-info">
+          <span>💡 特性「<strong>🍀 幸運</strong>」持ちでドロップ率UP！（1体につき <strong>+10%</strong> 重複）</span>
+          <span class="exp-luck-badge ${luckyCount > 0 ? "is-active" : ""}">
+            🍀 幸運ボーナス: <strong>+${luckPercent}%</strong>
+          </span>
+        </div>
+        <div class="exp-setup-row">
+          <select id="expAreaSelect">${optionsHtml}</select>
+          <button id="startExpBtn" class="btn-exp-start" ${!canLaunch ? "disabled" : ""}>
+            ${activeExps.length >= maxTeams ? "部隊枠がいっぱいです" : "🚩 このチームで遠征に出発"}
+          </button>
+        </div>
+        <div class="exp-reward-preview">
+          🎁 <strong>主な獲得報酬：</strong>${selectedCourse.rewardDesc}
+        </div>
       </div>
-      <div class="exp-luck-info">
-        <span>💡 特性「<strong>🍀 幸運</strong>」持ちでドロップ率UP！（1体につき <strong>+10%</strong> 重複）</span>
-        <span class="exp-luck-badge ${luckyCount > 0 ? "is-active" : ""}">
-          🍀 幸運ボーナス: <strong>+${luckPercent}%</strong>
-        </span>
-      </div>
-      <div class="exp-setup-row">
-        <select id="expAreaSelect">${optionsHtml}</select>
-        <button id="startExpBtn" class="btn-exp-start" ${!canLaunch ? "disabled" : ""}>
-          ${activeExps.length >= maxTeams ? "部隊枠がいっぱいです" : "🚩 このチームで遠征に出発"}
-        </button>
-      </div>
-      <!-- 👇 選択した遠征先の報酬内容をスマホでも見やすく折り返し表示 -->
-      <div class="exp-reward-preview">
-        🎁 <strong>主な獲得報酬：</strong>${selectedCourse.rewardDesc}
-      </div>
-    </div>
-  `;
+    `;
+
+    document.getElementById("expAreaSelect").onchange = (e) => {
+      e.target.blur(); // 選択が終わったらフォーカスを外して通常更新に戻す
+      handlers.onSelectExpArea(Number(e.target.value));
+    };
+    document.getElementById("startExpBtn").onclick = handlers.onStartExpedition;
+  }
 
   document.getElementById("expAreaSelect").onchange = (e) => {
     handlers.onSelectExpArea(Number(e.target.value));
