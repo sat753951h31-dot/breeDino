@@ -1,0 +1,10 @@
+# 依存パッケージ（重いので除外・Vercel側で自動生成される）
+node_modules
+
+# ローカルのビルド結果（Vercel側で自動生成される）
+dist
+
+# OSやエディタの不要ファイル
+.DS_Store
+Thumbs.db
+.vscode

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BreeDino</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="game-header">
+  <h1 class="game-title">
+    <span class="title-icon">🦖</span>
+    <span class="title-bree">Bree</span><span class="title-dino">Dino</span>
+    <span class="title-icon is-egg">🥚</span>
+  </h1>
+  <div class="game-subtitle">DINOSAUR BREEDING &amp; ADVENTURE</div>
+</header>
+
+<!-- スターター卵（未選択時のみ表示される） -->
+<div id="starterEggArea"></div>
+
+<!-- タブ切り替えボタン -->
+<nav class="tab-nav">
+  <button class="tab-btn active" data-tab="tab-explore">🧭 探索・育成</button>
+  <button class="tab-btn" data-tab="tab-dinos">🦖 恐竜一覧</button>
+  <button class="tab-btn" data-tab="tab-breed">🥚 交配・卵 <span id="breedTabBadge" class="tab-badge"></span></button>
+  <button class="tab-btn" data-tab="tab-expedition">
+    🏕️ 遠征 <span id="expTabBadge" class="tab-badge"></span>
+  </button>
+  <button class="tab-btn" data-tab="tab-dex">📖 図鑑</button>
+  <button class="tab-btn" data-tab="tab-records">🏆 実績・記録</button>
+</nav>
+
+<!-- ① 探索・育成タブ -->
+<section id="tab-explore" class="tab-panel active">
+  <div class="explore-layout">
+    <!-- 左カード：相棒ステータス ＆ エサやり（育成セット） -->
+    <div class="dashboard-card train-card">
+      <div id="activeDino"></div>
+      <div class="card-divider"></div>
+      <h4>🍖 エサを与える</h4>
+      <div id="foodStorage"></div>
+    </div>
+
+    <!-- 右カード：エリア探索 ＆ ログ（探索セット） -->
+    <div class="dashboard-card adventure-card">
+      <h3>🧭 フィールド探索</h3>
+      <div id="exploreAreaBox"></div>
+
+      <div id="battleStage" class="battle-stage area-bg-1">
+        <div class="stage-ground"></div>
+        <div id="stageBanner" class="stage-banner">探索待機中</div>
+        <div id="stagePlayer" class="stage-actor is-player"></div>
+        <div id="stageEnemy" class="stage-actor is-enemy"></div>
+        <div id="stageDamage" class="stage-damage"></div>
+      </div>
+
+      <div class="log-header">
+        <h4>📜 探索ログ</h4>
+        <button id="clearLogBtn" class="btn-clear-log" title="ログをすべて消去">🗑️ クリア</button>
+      </div>
+      <div id="huntLog" class="log-viewer"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ② 恐竜一覧タブ -->
+<section id="tab-dinos" class="tab-panel">
+    <div class="dino-controls">
+    <div class="control-item">
+      <label for="filterName">🔍 名前・種族検索</label>
+      <input type="text" id="filterName" placeholder="キーワードを入力...">
+    </div>
+
+    <div class="control-item">
+      <label for="filterSpecies">🦖 種族絞り込み</label>
+      <select id="filterSpecies">
+        <option value="all">すべての種族</option>
+      </select>
+    </div>
+
+    <div class="control-item">
+      <label for="filterSex">⚥ 性別絞り込み</label>
+      <select id="filterSex">
+        <option value="all">すべて</option>
+        <option value="male">♂️ オスのみ</option>
+        <option value="female">♀️ メスのみ</option>
+      </select>
+    </div>
+
+    <div class="control-item">
+      <label for="sortBy">🔃 並び替え</label>
+      <select id="sortBy">
+        <option value="default">入手順（古い順）</option>
+        <option value="newest">入手順（新しい順）</option>
+        <option value="level">レベルが高い順</option>
+        <option value="maxLevel">レベル上限が高い順</option>
+        <option value="rarity">レア度が高い順</option>
+        <option value="generation">世代（F）が高い順</option>
+        <option value="iv">個体値（IV合計）が高い順</option>
+      </select>
+    </div>
+
+    <div class="control-action">
+      <button id="resetFilterBtn" class="btn-reset-filter" title="検索・絞り込み条件を初期化">🔄 リセット</button>
+    </div>
+  </div>
+
+  <div class="bulk-release-bar">
+    <label>
+      🧹 一括整理対象:
+      <select id="bulkReleaseCondition">
+        <option value="white_f0">⚪ 白レア ＆ F0（世代0）のみ</option>
+        <option value="white_all">⚪ 白レアすべて（全世代）</option>
+        <option value="blue_f0">🔵 青レア以下 ＆ F0（世代0）のみ</option>
+        <option value="blue_all">🔵 青レア以下すべて（全世代）</option>
+      </select>
+    </label>
+    <button id="bulkReleaseBtn" class="btn-bulk-release">👋 条件に合う恐竜をまとめてお別れ</button>
+    <span class="bulk-note">※育成中・交配選択中・🔒ロック中・ミュータント・特殊体色は自動で保護されます</span>
+  </div>
+
+  <div id="dinoList"></div>
+</section>
+
+<!-- ③ 交配・卵タブ -->
+<section id="tab-breed" class="tab-panel">
+  <div id="facilityBox"></div>
+  <div class="breeding-stage">
+    <h2>🧬 恐竜交配</h2>
+    <div id="parentInfo"></div>
+    <button id="breedBtn" class="btn-breed-main" disabled>🥚 交配して卵を作る</button>
+  </div>
+
+  <div class="eggs-section">
+    <h3>⏳ 交配卵（孵化待ち）</h3>
+    <div id="eggList"></div>
+
+    <div class="wild-egg-header">
+      <h3>🌿 野生の卵</h3>
+      <button id="hatchAllWildBtn" class="btn-hatch-all" disabled>🐣 すべて孵化させる</button>
+    </div>
+    <div id="wildEggList"></div>
+  </div>
+</section>
+
+<!-- ⑥ 遠征タブ（#tab-breed の下あたりに追加） -->
+<section id="tab-expedition" class="tab-panel">
+  <div id="activeExpeditions"></div>
+  <div id="expeditionBuilder"></div>
+  <h3>🦖 派遣可能な待機恐竜（クリックでメンバー選択）</h3>
+  <div id="expeditionDinoGrid"></div>
+</section>
+
+<!-- ④ 図鑑タブ -->
+<section id="tab-dex" class="tab-panel">
+  <h2>恐竜図鑑</h2>
+  <p id="dexCount"></p>
+  <div id="dexList"></div>
+</section>
+
+<!-- ⑤ 実績・記録タブ（#tab-dex の下に追加） -->
+<section id="tab-records" class="tab-panel">
+  <h2>🏺 エリアの秘宝（パッシブ効果）</h2>
+  <div id="treasureList"></div>
+  
+  <h2>📊 プレイレコード</h2>
+  <div id="recordGrid"></div>
+
+  <h2>🏆 実績一覧</h2>
+  <p id="achievementCount"></p>
+  <div id="achievementList"></div>
+</section>
+
+<hr>
+<button id="resetSave">セーブデータ初期化</button>
+
+<script type="module" src="app.js"></script>
+
+</body>
+</html>
