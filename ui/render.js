@@ -962,6 +962,8 @@ function renderBreedingStage(game, selectedMale, selectedFemale) {
       return pIds === ids && pIds === ids;
     });
 
+    const isCapped = (lvInfo.inheritedBonus + lvInfo.trainBonus) > lvInfo.maxAllowedBonus;
+
     previewHtml = `
       <div class="breed-preview">
         ${special
@@ -971,8 +973,7 @@ function renderBreedingStage(game, selectedMale, selectedFemale) {
         <br>
         📈 レベル上限：<strong>Lv.${lvInfo.totalMaxLevel}</strong>
         （F${lvInfo.nextGen}基本 <strong>${lvInfo.genBaseMax}</strong>
-        ＋ 血統引継 <strong>+${lvInfo.inheritedBonus}</strong>
-        ＋ 今回育成 <strong>+${lvInfo.trainBonus}</strong>）
+        ＋ ボーナス <strong>+${lvInfo.totalBonus}</strong>${isCapped ? ` <small>※F${lvInfo.nextGen}上限</small>` : ""}）
       </div>
     `;
   }

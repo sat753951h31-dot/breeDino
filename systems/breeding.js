@@ -332,6 +332,7 @@ function resolveSpeciesName(speciesId, fallbackName) {
 }
 
 // 世代ごとの基本上限・血統引継・今回の育成ボーナスをすべて合算して計算
+// 世代ごとの基本上限・血統引継・今回の育成ボーナスを合算（世代ごとの上限キャップ付き）
 export function getChildMaxLevelInfo(parentA, parentB) {
   const genA = parentA.generation ?? 0;
   const genB = parentB.generation ?? 0;
@@ -343,22 +344,28 @@ export function getChildMaxLevelInfo(parentA, parentB) {
   const maxA = parentA.maxLevel ?? (20 + genA * 5);
   const maxB = parentB.maxLevel ?? (20 + genB * 5);
 
-  // 2. 両親それぞれが過去の世代から持っている「累積ボーナス」を算出（高い方を継承）
+  // 2. 両親が持つ累積ボーナス（高い方を継承）
   const pastBonusA = Math.max(0, maxA - (20 + genA * 5));
   const pastBonusB = Math.max(0, maxB - (20 + genB * 5));
   const inheritedBonus = Math.max(pastBonusA, pastBonusB);
 
-  // 3. 今回の両親のレベル達成度に応じた新規ボーナス（片親MAXで+5、両親MAXで+10）
+  // 3. 今回の育成ボーナス（片親MAXで+5、両親MAXで+10）
   const ratioA = Math.min(1, (parentA.level ?? 1) / maxA);
   const ratioB = Math.min(1, (parentB.level ?? 1) / maxB);
   const trainBonus = Math.floor(ratioA * 5) + Math.floor(ratioB * 5);
+
+  // 4. その世代で持てるボーナス上限（F1なら最大+10、F2なら最大+20）で制限
+  const maxAllowedBonus = nextGen * 10;
+  const totalBonus = Math.min(maxAllowedBonus, inheritedBonus + trainBonus);
 
   return {
     nextGen,
     genBaseMax,
     inheritedBonus,
     trainBonus,
-    totalMaxLevel: genBaseMax + inheritedBonus + trainBonus
+    totalBonus,
+    maxAllowedBonus,
+    totalMaxLevel: genBaseMax + totalBonus
   };
 }
 

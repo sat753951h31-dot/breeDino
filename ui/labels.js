@@ -42,9 +42,11 @@ export function getEggRarityLabel(rarity) {
 }
 
 export function getSexLabel(sex) {
-  switch (sex) {
-    case "male": return "♂️ オス";
-    case "female": return "♀️ メス";
-    default: return "";
+  if (sex === "male") {
+    return `<span class="sex-male">♂ オス</span>`;
   }
+  if (sex === "female") {
+    return `<span class="sex-female">♀ メス</span>`;
+  }
+  return "不明";
 }

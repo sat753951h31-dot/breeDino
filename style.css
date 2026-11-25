@@ -2549,3 +2549,14 @@ button{
   color: #1565c0;
   line-height: 1.4;
 }
+
+/* 性別ラベルの色分け（PC・スマホ共通） */
+.sex-male {
+  color: #1565c0;
+  font-weight: bold;
+}
+
+.sex-female {
+  color: #d81b60;
+  font-weight: bold;
+}
