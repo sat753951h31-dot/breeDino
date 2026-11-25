@@ -154,8 +154,9 @@ function rescueIfSoftlocked() {
 }
 
 function getUnlockedExpeditionLevels() {
-  if ((game.worldLoop ?? 1) > 1) return;
-  return [1, 2, 3, 4, 5, 6].filter(lv => (game.areaProgress?.[lv] ?? 0) >= 100);
+  const allLevels = AREA_EXPEDITIONS.map(e => e.areaLevel);
+  if ((game.worldLoop ?? 1) > 1) return allLevels;
+  return allLevels.filter(lv => (game.areaProgress?.[lv] ?? 0) >= 100);
 }
 
 // 現在の孵化時間倍率を取得するヘルパー
@@ -1728,6 +1729,7 @@ function update() {
       filterType,
       filterRarity,
       filterGen,
+      filterLock,
       sortBy,
       isAutoExploring
     },

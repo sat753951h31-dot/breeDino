@@ -1199,9 +1199,11 @@ function renderExpeditionTab(game, handlers) {
   const gridEl = document.getElementById("expeditionDinoGrid");
   if (!activeEl || !builderEl || !gridEl) return;
 
+  const allLevels = AREA_EXPEDITIONS.map(e => e.areaLevel);
   const unlockedLevels = (game.worldLoop ?? 1) > 1
-  ? [1, 2, 3, 4, 5, 6]
-  : [1, 2, 3, 4, 5, 6].filter(lv => (game.areaProgress?.[lv] ?? 0) >= 100);
+    ? allLevels
+    : allLevels.filter(lv => (game.areaProgress?.[lv] ?? 0) >= 100);
+
   const maxTeams = unlockedLevels.length;
   const activeExps = game.expeditions ?? [];
 
