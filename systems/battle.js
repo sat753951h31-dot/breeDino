@@ -115,10 +115,13 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
 
   if (pType.id === "marine") {
     addLog(isSeaArea
-      ? `🌊 【海の王者】海エリアのため ${player.name} の全能力が 1.35倍 に上昇！`
+      ? `🌊 【海の王者】海エリアのため ${player.name} の能力が 1.35倍 に上昇！`
       : `🏜️ 【陸上のハンデ】陸エリアのため ${player.name} の能力が 0.75倍 に低下…`
     );
+  } else if (isSeaArea) {
+    addLog(`🌊 【水中ペナルティ】海エリアのため ${player.name}（${pType.name}）の能力が 0.75倍 に低下…`);
   }
+
   if (eType.id === "marine") {
     addLog(isSeaArea
       ? `🌊 野生の ${enemy.name} が海エリアの恩恵を受けている！`

@@ -83,6 +83,11 @@ export function getTypeMatchupMultiplier(attackerTypeId, defenderTypeId) {
 
 // 海エリア・陸エリアの地形補正倍率を返す（海生爬虫類のみ影響）
 export function getTerrainMultiplier(typeId, isSeaArea = false) {
-  if (typeId !== "marine") return 1.0;
-  return isSeaArea ? 1.35 : 0.75;
+  if (isSeaArea) {
+    // 海エリア：海生は 1.35倍、海生以外は 0.75倍 に低下
+    return typeId === "marine" ? 1.35 : 0.75;
+  } else {
+    // 陸エリア：海生は 0.75倍 に低下、海生以外は通常（1.0倍）
+    return typeId === "marine" ? 0.75 : 1.0;
+  }
 }
