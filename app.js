@@ -686,79 +686,82 @@ function handleHatchAllWildEggs() {
 function handleBulkRelease() {
   if (!canAct()) return;
 
-  const conditionEl = document.getElementById("bulkReleaseCondition");
-  const condition = conditionEl ? conditionEl.value : "white_f0";
+  const condition = document.getElementById("bulkReleaseCondition")?.value ?? "white_f0";
+  const isF0Only = condition.endsWith("_f0");
 
-  // 1. 条件に合致し、かつ保護対象ではない恐竜を抽出
+  const allowedRarities = condition.startsWith("purple")
+    ? ["white", "blue", "purple"]
+    : condition.startsWith("blue")
+      ? ["white", "blue"]
+      : ["white"];
+
+  const busyIds = getBusyExpeditionDinoIds();
+
+  // 対象となる恐竜を抽出（保護対象はすべて除外）
   const targets = game.dinos.filter(dino => {
-    // 絶対保護ルール（育成中・ロック済み・交配選択中・ミュータント・色違いは除外）
-    if (dino.locked) return false;
     if (dino.uid === game.activeDinoId) return false;
+    if (dino.locked) return false;
+    if (busyIds.has(dino.uid)) return false;
     if (dino.uid === selectedMale || dino.uid === selectedFemale) return false;
     if (dino.mutant) return false;
     if (dino.color && dino.color !== "normal") return false;
-    if (getBusyExpeditionDinoIds().has(dino.uid)) return false;
-    if (game.expedition?.active && game.expedition.memberIds.includes(dino.uid)) return false;
 
-    const rarity = dino.rarityType ?? "white";
-    const gen = dino.generation ?? 0;
+    if (isF0Only && (dino.generation ?? 0) !== 0) return false;
 
-    switch (condition) {
-      case "white_f0":
-        return rarity === "white" && gen === 0;
-      case "white_all":
-        return rarity === "white";
-      case "blue_f0":
-        return (rarity === "white" || rarity === "blue") && gen === 0;
-      case "blue_all":
-        return rarity === "white" || rarity === "blue";
-      default:
-        return false;
-    }
+    const r = dino.rarityType ?? "white";
+    return allowedRarities.includes(r);
   });
 
   if (targets.length === 0) {
-    alert("条件に一致する（保護対象外の）恐竜がいませんでした。");
+    alert("条件に合う整理対象の恐竜がいません。\n（育成中・遠征中・ロック中・ミュータント・特殊体色は保護されています）");
     return;
   }
 
-  // 最後の1体は残す安全策（通常はactiveDinoIdで保護されているが念のため）
-  if (game.dinos.length - targets.length < 1) {
-    targets.pop();
-  }
+  const labelMap = {
+    white_f0: "⚪ 白レア ＆ F0のみ",
+    white_all: "⚪ 白レアすべて（全世代）",
+    blue_f0: "🔵 青レア以下 ＆ F0のみ",
+    blue_all: "🔵 青レア以下すべて（全世代）",
+    purple_f0: "🟣 紫レア以下 ＆ F0のみ",
+    purple_all: "🟣 紫レア以下すべて（全世代）"
+  };
 
-  // 2. 獲得できるお肉の合計を計算
-  const rewardTotals = { raw: 0, good: 0, premium: 0 };
-  targets.forEach(dino => {
-    const reward = getReleaseReward(dino);
-    rewardTotals[reward.type] = (rewardTotals[reward.type] ?? 0) + reward.amount;
-  });
-
-  const rewardSummary = [
-    rewardTotals.raw > 0 ? `🍖 生肉 ×${rewardTotals.raw}` : "",
-    rewardTotals.good > 0 ? `🥩 上質肉 ×${rewardTotals.good}` : "",
-    rewardTotals.premium > 0 ? `✨ 極上肉 ×${rewardTotals.premium}` : ""
-  ].filter(Boolean).join("、");
-
-  // 3. 事前確認ダイアログ
   const ok = confirm(
-    `条件に一致する ${targets.length}体 の恐竜とまとめてお別れしますか？\n` +
-    `（育成中・選択中・ミュータント・色違いは保護されています）\n\n` +
-    `獲得アイテム合計：${rewardSummary}`
+    `🧹 【一括お別れ確認】\n` +
+    `対象条件：${labelMap[condition]}\n` +
+    `対象数：${targets.length} 体\n\n` +
+    `本当にお別れしてエサ（お肉）に変換しますか？`
   );
   if (!ok) return;
 
-  // 4. リストから削除して報酬を付与
+  let rawGain = 0;
+  let goodGain = 0;
+  let premiumGain = 0;
+
+  targets.forEach(dino => {
+    const r = dino.rarityType ?? "white";
+    if (r === "purple") {
+      premiumGain += 1;
+    } else if (r === "blue") {
+      goodGain += 1;
+    } else {
+      rawGain += 1;
+    }
+  });
+
   const targetIds = new Set(targets.map(d => d.uid));
   game.dinos = game.dinos.filter(d => !targetIds.has(d.uid));
 
-  game.foods.raw = (game.foods.raw ?? 0) + rewardTotals.raw;
-  game.foods.good = (game.foods.good ?? 0) + rewardTotals.good;
-  game.foods.premium = (game.foods.premium ?? 0) + rewardTotals.premium;
+  game.foods.raw = (game.foods.raw ?? 0) + rawGain;
+  game.foods.good = (game.foods.good ?? 0) + goodGain;
+  game.foods.premium = (game.foods.premium ?? 0) + premiumGain;
 
-  game.stats.dinosReleased = (game.stats.dinosReleased ?? 0) + targets.length;
+  const gainTexts = [];
+  if (rawGain > 0) gainTexts.push(`🍖 生肉×${rawGain}`);
+  if (goodGain > 0) gainTexts.push(`🥩 上質肉×${goodGain}`);
+  if (premiumGain > 0) gainTexts.push(`✨ 極上肉×${premiumGain}`);
 
-  addLog(`👋 ${targets.length}体の恐竜とまとめてお別れし、${rewardSummary} を獲得した！`);
+  addLog(`👋 【一括お別れ】${targets.length} 体の恐竜とお別れし、${gainTexts.join("・")} を手に入れた！`);
   update();
 }
 
@@ -1164,7 +1167,60 @@ const handlers = {
   onFeed: handleFeed,
   onRelease: handleRelease,
   onRename: handleRename,
-  onHatchAllWildEggs: handleHatchAllWildEggs,
+  onHatchAllWildEggs: () => {
+    if (!canAct()) return;
+    const now = Date.now();
+    const readyEggs = game.wildEggs.filter(e => (e.hatchAt ?? 0) <= now);
+    if (readyEggs.length === 0) return;
+
+    const summaryLines = [];
+
+    readyEggs.forEach(egg => {
+      const dino = hatchStarterEgg(egg);
+      const stats = calculateStats(dino);
+      if (dino.currentHp == null || Number.isNaN(dino.currentHp)) {
+        dino.currentHp = stats.hp;
+      }
+
+      const isNewSpecies = !game.discoveredSpecies.includes(dino.speciesId);
+      discoverSpecies(dino);
+
+      game.dinos.push(dino);
+      if (!game.activeDinoId) game.activeDinoId = dino.uid;
+
+      game.stats.eggsHatched++;
+      if (dino.mutant) game.stats.mutantsBorn++;
+
+      const trait = getTraitData(dino.trait);
+      const sexMark = dino.sex === "male" ? "♂️" : "♀️";
+      const rarityLabel = getRarityLabel(dino.rarityType);
+      const tags = [];
+      if (isNewSpecies) tags.push("📖NEW!");
+      if (dino.mutant) tags.push("🧬MUTANT");
+      const tagStr = tags.length > 0 ? `【${tags.join("・")}】` : "";
+
+      summaryLines.push(
+        `・${tagStr}${dino.name}${sexMark}（${rarityLabel} / ${getSizeLabel(dino.size)} / ${trait.icon}${trait.name}）`
+      );
+
+      addLog(
+        `🐣 野生の卵から「${dino.name}（F0 / ${sexMark} / ${rarityLabel} / ${trait.icon}${trait.name}）」が誕生した！`
+      );
+      if (isNewSpecies) {
+        addLog(`📖 【図鑑新規登録】${dino.name} を発見！`);
+      }
+    });
+
+    // 孵化済みの卵をリストから除外
+    game.wildEggs = game.wildEggs.filter(e => (e.hatchAt ?? 0) > now);
+
+    alert(
+      `🐣 ${readyEggs.length}個の野生の卵が一斉に孵化しました！\n\n` +
+      summaryLines.join("\n")
+    );
+
+    update();
+  },
   onToggleLock: handleToggleLock,
   onBossBattle: handleBossBattle,
   onUpgradeFacility: handleUpgradeFacility,
@@ -1265,24 +1321,61 @@ const handlers = {
   },
   onHatchWildEgg: (eggId) => {
     if (!canAct()) return;
-
     const index = game.wildEggs.findIndex(e => e.id === eggId);
     if (index === -1) return;
 
-    const dino = hatchStarterEgg(game.wildEggs[index]);
+    const egg = game.wildEggs[index];
+    if ((egg.hatchAt ?? 0) > Date.now()) return;
+
+    const dino = hatchStarterEgg(egg);
+    const stats = calculateStats(dino);
+    if (dino.currentHp == null || Number.isNaN(dino.currentHp)) {
+      dino.currentHp = stats.hp;
+    }
+
+    const isNewSpecies = !game.discoveredSpecies.includes(dino.speciesId);
+    discoverSpecies(dino);
+
     game.dinos.push(dino);
     if (!game.activeDinoId) game.activeDinoId = dino.uid;
-    discoverSpecies(dino);
-    game.wildEggs.splice(index, 1);
 
     game.stats.eggsHatched++;
-    update();
-  },
-  onRerollStarter: () => {
-    if (game.starterEgg.rarity === "rainbow") {
-      if (!confirm("🌈虹レアの卵です。\n本当に選び直しますか？")) return;
+    if (dino.mutant) game.stats.mutantsBorn++;
+
+    game.wildEggs.splice(index, 1);
+
+    // 詳細メッセージの組み立て
+    const trait = getTraitData(dino.trait);
+    const sexLabel = dino.sex === "male" ? "♂️ オス" : "♀️ メス";
+    const rarityLabel = getRarityLabel(dino.rarityType);
+    const sizeLabel = getSizeLabel(dino.size);
+    const colorLabel = getColorLabel(dino.color);
+    const maxLv = dino.maxLevel ?? 20;
+
+    const highlights = [];
+    if (isNewSpecies) highlights.push("📖 【図鑑新規登録！】");
+    if (dino.mutant) highlights.push("🧬 【突然変異（MUTANT）誕生！】");
+    if (dino.color && dino.color !== "normal") highlights.push(`✨ 【希少体色：${colorLabel}】`);
+
+    const highlightText = highlights.length > 0 ? `\n${highlights.join("\n")}\n` : "";
+
+    addLog(
+      `🐣 野生の卵から「${dino.name}（F0 / ${sexLabel} / ${rarityLabel} / ${trait.icon}${trait.name}）」が誕生した！`
+    );
+    if (isNewSpecies) {
+      addLog(`📖 【図鑑新規登録】${dino.name} を発見！`);
     }
-    game.starterEgg = rollStarterEgg();
+
+    alert(
+      `🐣 野生の卵が孵化しました！\n` +
+      `${highlightText}\n` +
+      `・種族：${dino.name}（F0 / ${sexLabel}）\n` +
+      `・レア度：${rarityLabel} ／ レベル上限：Lv.${maxLv}\n` +
+      `・体格：${sizeLabel} ／ 体色：${colorLabel}\n` +
+      `・特性：${trait.icon} ${trait.name}（${trait.desc}）\n` +
+      `・個体値：ATK ${dino.atkIv} / HP ${dino.hpIv} / SPD ${dino.spdIv}`
+    );
+
     update();
   },
   onSelectStarter: () => {

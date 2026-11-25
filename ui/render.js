@@ -1176,17 +1176,17 @@ function renderExpeditionTab(game, handlers) {
     btn.onclick = () => handlers.onClaimExpedition(btn.dataset.id);
   });
 
+  const busyIds = new Set();
+  activeExps.forEach(e => e.memberIds.forEach(id => busyIds.add(id)));
+
+  const draft = game.expeditionDraft ?? { areaLevel: unlockedLevels, memberIds: [] };
+  const selectedLevel = unlockedLevels.includes(draft.areaLevel) ? draft.areaLevel : unlockedLevels;
+  const validDraftMembers = draft.memberIds.filter(
+    id => id !== game.activeDinoId && !busyIds.has(id) && game.dinos.some(d => d.uid === id)
+  );
+
   // 2. 新規チーム編成パネル
   if (document.activeElement?.id !== "expAreaSelect") {
-    const busyIds = new Set();
-    activeExps.forEach(e => e.memberIds.forEach(id => busyIds.add(id)));
-
-    const draft = game.expeditionDraft ?? { areaLevel: unlockedLevels, memberIds: [] };
-    const selectedLevel = unlockedLevels.includes(draft.areaLevel) ? draft.areaLevel : unlockedLevels;
-    const validDraftMembers = draft.memberIds.filter(
-      id => id !== game.activeDinoId && !busyIds.has(id) && game.dinos.some(d => d.uid === id)
-    );
-
     const canLaunch = activeExps.length < maxTeams && validDraftMembers.length > 0;
     const luckyCount = validDraftMembers.filter(id => {
       const d = game.dinos.find(dino => dino.uid === id);
@@ -1226,7 +1226,7 @@ function renderExpeditionTab(game, handlers) {
     `;
 
     document.getElementById("expAreaSelect").onchange = (e) => {
-      e.target.blur(); // 選択が終わったらフォーカスを外して通常更新に戻す
+      e.target.blur();
       handlers.onSelectExpArea(Number(e.target.value));
     };
     document.getElementById("startExpBtn").onclick = handlers.onStartExpedition;
