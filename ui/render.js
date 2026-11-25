@@ -1164,9 +1164,13 @@ function renderExpeditionTab(game, handlers) {
   const luckPercent = luckyCount * 10;
   const canLaunch = activeExps.length < maxTeams && validDraftMembers.length > 0;
 
+  // 現在選択されているコースの情報を取得
+  const selectedCourse = AREA_EXPEDITIONS.find(item => item.areaLevel === selectedLevel) ?? AREA_EXPEDITIONS[0];
+
+  // リストボックス内は短い表記にして横はみ出しを防ぐ
   const optionsHtml = unlockedLevels.map(lv => {
     const c = AREA_EXPEDITIONS.find(item => item.areaLevel === lv);
-    return `<option value="${lv}" ${lv === selectedLevel ? "selected" : ""}>${c.icon} ${c.name}（${c.rewardDesc}）</option>`;
+    return `<option value="${lv}" ${lv === selectedLevel ? "selected" : ""}>${c.icon} ${c.name}</option>`;
   }).join("");
 
   builderEl.innerHTML = `
@@ -1176,9 +1180,9 @@ function renderExpeditionTab(game, handlers) {
         <span>空き部隊枠: <strong>${maxTeams - activeExps.length}</strong> 枠</span>
       </div>
       <div class="exp-luck-info">
-        <span>💡 特性「<strong>🍀 幸運</strong>」持ちを編成すると卵・結晶のドロップ率UP！（1体につき <strong>+10%</strong> 重複）</span>
+        <span>💡 特性「<strong>🍀 幸運</strong>」持ちでドロップ率UP！（1体につき <strong>+10%</strong> 重複）</span>
         <span class="exp-luck-badge ${luckyCount > 0 ? "is-active" : ""}">
-          🍀 現在の幸運ボーナス: <strong>+${luckPercent}%</strong>
+          🍀 幸運ボーナス: <strong>+${luckPercent}%</strong>
         </span>
       </div>
       <div class="exp-setup-row">
@@ -1186,6 +1190,10 @@ function renderExpeditionTab(game, handlers) {
         <button id="startExpBtn" class="btn-exp-start" ${!canLaunch ? "disabled" : ""}>
           ${activeExps.length >= maxTeams ? "部隊枠がいっぱいです" : "🚩 このチームで遠征に出発"}
         </button>
+      </div>
+      <!-- 👇 選択した遠征先の報酬内容をスマホでも見やすく折り返し表示 -->
+      <div class="exp-reward-preview">
+        🎁 <strong>主な獲得報酬：</strong>${selectedCourse.rewardDesc}
       </div>
     </div>
   `;

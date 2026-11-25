@@ -2521,3 +2521,31 @@ button{
   0%, 100% { filter: brightness(1); }
   50% { filter: brightness(1.15); }
 }
+
+.exp-setup-row select {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #a5d6a7;
+  background-color: #fff;
+  font-size: 0.95em;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* 選択中コースの報酬プレビュー表示 */
+.exp-reward-preview {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1px dashed #90caf9;
+  font-size: 0.85em;
+  color: #1565c0;
+  line-height: 1.4;
+}
