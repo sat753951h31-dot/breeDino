@@ -1,7 +1,9 @@
 import { TREASURES } from "../data/treasures.js";
 import { getTraitData } from "../data/traits.js";
+import { getFacilityBonuses } from "../data/facilities.js";
 
 let activeTreasures = {};
+let activeFacility = {};
 
 function getGenerationMultiplier(generation) {
   return 1 + (generation * 0.02);
@@ -40,6 +42,7 @@ export function calculateStats(dino) {
   const mutantBonus = dino.mutant ? 1.15 : 1;
   const sizeBonus = getSizeMultipliers(dino.size);
   const tBonus = getTreasureBonuses();
+  const fBonus = getFacilityBonuses(activeFacility); // 👈 設備ボーナスを取得
   const traitEffect = getTraitData(dino.trait).effect;
 
   const commonMult = rarityBonus * generationBonus * mutantBonus;
@@ -49,19 +52,19 @@ export function calculateStats(dino) {
       dino.baseAtk +
       dino.level * 2 +
       dino.atkIv * 0.3
-    ) * commonMult * sizeBonus.atk,
+    ) * commonMult * sizeBonus.atk * (1 + tBonus.atkMult + fBonus.statMult + (traitEffect.atkMult ?? 0)),
 
     hp: (
       dino.baseHp +
       dino.level * 5 +
       dino.hpIv * 0.5
-    ) * commonMult * sizeBonus.hp,
+    ) * commonMult * sizeBonus.hp * (1 + tBonus.hpMult + fBonus.statMult + (traitEffect.hpMult ?? 0)),
 
     spd: (
       dino.baseSpd +
       dino.level +
       dino.spdIv * 0.3
-    ) * commonMult * sizeBonus.spd
+    ) * commonMult * sizeBonus.spd * (1 + tBonus.spdMult + fBonus.statMult + (traitEffect.spdMult ?? 0))
   };
 }
 
@@ -88,4 +91,8 @@ export function getTreasureBonuses() {
   }
 
   return bonus;
+}
+
+export function syncFacilities(facilityObj = {}) {
+  activeFacility = facilityObj ?? {};
 }

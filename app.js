@@ -1,5 +1,5 @@
 import { loadGame, saveGame } from "./systems/save.js";
-import { calculateStats, syncTreasures, getTreasureBonuses } from "./systems/stats.js";
+import { calculateStats, syncTreasures, syncFacilities, getTreasureBonuses } from "./systems/stats.js";
 import { addExp } from "./systems/level.js";
 import { breed, createBreedingEgg, getRequiredCrystals } from "./systems/breeding.js";
 import { rollStarterEgg, hatchStarterEgg, createWildEgg } from "./systems/starterEgg.js";
@@ -16,9 +16,12 @@ import { AREA_BOSSES } from "./data/bosses.js";
 import { INCUBATOR_LEVELS, MAX_INCUBATOR_LEVEL, getHatchTimeMultiplier } from "./data/facility.js";
 import { AREA_EXPEDITIONS } from "./data/expeditions.js";
 import { playExploreSequence } from "./ui/battleStage.js";
+import { FACILITIES, MAX_FACILITY_LEVEL, getFacilityBonuses } from "./data/facilities.js";
+
 
 let game = loadGame();
 syncTreasures(game.treasures);
+syncFacilities(game.facility);
 processOfflineProgress();
 
 if (!game.starterEgg) {
@@ -55,7 +58,7 @@ function addLog(text) {
 
 // 現在の孵化時間倍率を取得するヘルパー
 function currentHatchMult() {
-  return getHatchTimeMultiplier(game.facility?.incubatorLevel ?? 0);
+  return getFacilityBonuses(game.facility).hatchTimeMult;
 }
 
 // 拠点（孵化設備）のアップグレード処理
@@ -113,6 +116,8 @@ function processOfflineProgress() {
   const effectiveSec = Math.min(rawElapsedSec, MAX_OFFLINE_SEC);
 
   const tBonus = getTreasureBonuses();
+  const fBonus = getFacilityBonuses(game.facility);
+  const totalStandbyExp = tBonus.standbyExp + fBonus.standbyExp;
   const passiveExpGain = Math.floor(effectiveSec / 5) * tBonus.standbyExp;
 
   let healedCount = 0;
@@ -359,7 +364,8 @@ async function handleExplore(isAuto = false) {
     // 連戦ボーナス倍率 ＋ 特性「早熟」ボーナスを反映して経験値計算
     const streakMult = i === 1 ? 1.0 : i === 2 ? 1.2 : 1.5;
     const baseGainedExp = (area.expBonus + activeDino.level) * streakMult;
-    const gainedExp = Math.floor(baseGainedExp * (activeTraitEffect.allExpMult ?? 1));
+    const fBonus = getFacilityBonuses(game.facility);
+    const gainedExp = Math.floor(baseGainedExp * (activeTraitEffect.allExpMult ?? 1) * (1 + fBonus.expMult));
 
     addLog(`✅ ${enemy.name} を倒した！（EXP +${gainedExp}${i > 1 ? ` / 連戦ボーナス×${streakMult}` : ""}）`);
     addExp(activeDino, gainedExp);
@@ -580,15 +586,17 @@ function handleFeed(dinoId, foodType) {
   const stats = calculateStats(dino);
 
   // 割合回復量の計算（最低保証あり・極上肉は全快）
-  const healAmount = config.healRate >= 1.0
+  const fBonus = getFacilityBonuses(game.facility);
+  const finalHealRate = Math.min(1.0, config.healRate + fBonus.healBonus);
+  const healAmount = finalHealRate >= 1.0
     ? stats.hp
-    : Math.max(config.minHeal, Math.floor(stats.hp * config.healRate));
+    : Math.max(config.minHeal, Math.floor(stats.hp * finalHealRate));
 
   dino.currentHp = Math.min(stats.hp, dino.currentHp + healAmount);
 
   // 特性（大食い・早熟）の経験値倍率を適用
   const traitEffect = getTraitData(dino.trait).effect;
-  const expMult = (traitEffect.feedExpMult ?? 1) * (traitEffect.allExpMult ?? 1);
+  const expMult = (traitEffect.feedExpMult ?? 1) * (traitEffect.allExpMult ?? 1) * (1 + fBonus.foodExpMult);
   const finalExp = Math.floor(config.exp * expMult);
 
   game.foods[foodType]--;
@@ -1008,59 +1016,77 @@ function handleClaimExpedition(expId) {
   const luckBonus = luckyCount * 0.10; // 1体ごとに +10%（3体で +30% 重複）
   const rewards = [];
 
+  game.materials ??= { wood: 0, stone: 0, ore: 0 };
+
   if (course.areaLevel === 1) {
-    const raw = Math.floor((4 + Math.floor(Math.random() * 3)) * powerMult);
-    const good = Math.floor((1 + (Math.random() < 0.4 + luckBonus ? 1 : 0)) * powerMult);
+    const wood = Math.floor((2 + Math.floor(Math.random() * 3)) * powerMult);
+    const raw = Math.floor((5 + Math.floor(Math.random() * 4)) * powerMult);
+    const good = Math.floor((2 + (Math.random() < 0.4 + luckBonus ? 1 : 0)) * powerMult);
+    game.materials.wood += wood;
     game.foods.raw += raw;
     game.foods.good += good;
-    rewards.push(`🍖 生肉×${raw}`, `🥩 上質肉×${good}`);
+    rewards.push(`🪵 古代の木材×${wood}`, `🍖 生肉×${raw}`, `🥩 上質肉×${good}`);
   } else if (course.areaLevel === 2) {
-    const crystal = Math.max(1, Math.floor((1 + (Math.random() < 0.35 + luckBonus ? 1 : 0)) * (powerMult >= 1.5 ? 1.5 : 1)));
-    const good = Math.floor((2 + Math.floor(Math.random() * 2)) * powerMult);
+    const wood = Math.floor((3 + Math.floor(Math.random() * 3)) * powerMult);
+    const stone = Math.floor((1 + Math.floor(Math.random() * 3)) * powerMult);
+    const crystal = Math.max(2, Math.floor((2 + (Math.random() < 0.4 + luckBonus ? 1 : 0)) * (powerMult >= 1.5 ? 1.5 : 1)));
+    game.materials.wood += wood;
+    game.materials.stone += stone;
     game.items.breedCrystal = (game.items.breedCrystal ?? 0) + crystal;
     game.stats.crystalsEarned = (game.stats.crystalsEarned ?? 0) + crystal;
-    game.foods.good += good;
-    rewards.push(`💎 生命の結晶×${crystal}`, `🥩 上質肉×${good}`);
+    rewards.push(`🪵 木材×${wood}`, `🪨 神秘の石材×${stone}`, `💎 結晶×${crystal}`);
   } else if (course.areaLevel === 3) {
-    const rarity = Math.random() < (0.35 + luckBonus) ? "purple" : "blue";
-    const size = Math.random() < 0.3 ? "large" : "normal";
+    const stone = Math.floor((3 + Math.floor(Math.random() * 3)) * powerMult);
+    const wood = Math.floor((3 + Math.floor(Math.random() * 2)) * powerMult);
+    const rarity = Math.random() < (0.45 + luckBonus) ? "purple" : "blue";
+    const size = Math.random() < 0.35 ? "large" : "normal";
+    game.materials.stone += stone;
+    game.materials.wood += wood;
     game.wildEggs.push(createWildEgg(size, rarity, currentHatchMult()));
-    const prem = Math.max(1, Math.floor(1 * (powerMult >= 1.75 ? 2 : 1)));
+    const prem = Math.max(2, Math.floor(2 * (powerMult >= 1.75 ? 1.5 : 1)));
     game.foods.premium += prem;
-    rewards.push(`🥚 野生卵(${getEggRarityLabel(rarity)})`, `✨ 極上肉×${prem}`);
+    rewards.push(`🪨 石材×${stone}`, `🪵 木材×${wood}`, `🥚 野生卵(${getEggRarityLabel(rarity)})`, `✨ 極上肉×${prem}`);
   } else if (course.areaLevel === 4) {
-    const crystal = Math.floor(2 * (powerMult >= 1.5 ? 1.5 : 1));
-    const prem = Math.floor(2 * (powerMult >= 1.5 ? 1.5 : 1));
+    const ore = Math.floor((1 + Math.floor(Math.random() * 3)) * powerMult);
+    const stone = Math.floor((4 + Math.floor(Math.random() * 3)) * powerMult);
+    const crystal = Math.floor(3 * (powerMult >= 1.5 ? 1.5 : 1));
+    game.materials.ore += ore;
+    game.materials.stone += stone;
     game.items.breedCrystal = (game.items.breedCrystal ?? 0) + crystal;
     game.stats.crystalsEarned = (game.stats.crystalsEarned ?? 0) + crystal;
-    game.foods.premium += prem;
-    rewards.push(`💎 生命の結晶×${crystal}`, `✨ 極上肉×${prem}`);
-    if (Math.random() < (0.45 + luckBonus)) {
+    rewards.push(`🔮 星屑の鉱石×${ore}`, `🪨 石材×${stone}`, `💎 結晶×${crystal}`);
+    if (Math.random() < (0.50 + luckBonus)) {
       game.wildEggs.push(createWildEgg("large", "purple", currentHatchMult()));
       rewards.push(`🥚 野生卵(🟣 紫卵)`);
     }
   } else {
     // Lv.5 総力遠征
-    const crystal = Math.floor(3 * (powerMult >= 1.5 ? 1.5 : 1));
-    const prem = Math.floor(3 * (powerMult >= 1.5 ? 1.5 : 1));
-    const rarity = Math.random() < (0.40 + luckBonus) ? "rainbow" : "purple";
-    const size = Math.random() < 0.40 ? "giant" : "large";
+    const ore = Math.floor((3 + Math.floor(Math.random() * 3)) * powerMult);
+    const stone = Math.floor((5 + Math.floor(Math.random() * 3)) * powerMult);
+    const crystal = Math.floor(5 * (powerMult >= 1.5 ? 1.5 : 1));
+    const prem = Math.floor(4 * (powerMult >= 1.5 ? 1.5 : 1));
+    const rarity = Math.random() < (0.45 + luckBonus) ? "rainbow" : "purple";
+    const size = Math.random() < 0.45 ? "giant" : "large";
+    game.materials.ore += ore;
+    game.materials.stone += stone;
     game.items.breedCrystal = (game.items.breedCrystal ?? 0) + crystal;
     game.stats.crystalsEarned = (game.stats.crystalsEarned ?? 0) + crystal;
     game.foods.premium += prem;
     game.wildEggs.push(createWildEgg(size, rarity, currentHatchMult()));
-    rewards.push(`🥚 野生卵(${getEggRarityLabel(rarity)})`, `💎 結晶×${crystal}`, `✨ 極上肉×${prem}`);
+    rewards.push(`🔮 鉱石×${ore}`, `🪨 石材×${stone}`, `🥚 野生卵(${getEggRarityLabel(rarity)})`, `💎 結晶×${crystal}`, `✨ 極上肉×${prem}`);
   }
 
   // 参加メンバーへの経験値付与
   const baseMemberExp = Math.floor((course.durationMs / 1000) * 0.5); // 3分で90EXP 〜 40分で1200EXP
+  const fBonus = getFacilityBonuses(game.facility);
   const levelUpNotices = [];
 
   members.forEach(d => {
     const prevLv = d.level;
     const traitEffect = getTraitData(d.trait).effect;
-    const finalExp = Math.floor(baseMemberExp * (traitEffect.allExpMult ?? 1));
-
+    const finalExp = Math.floor(
+      baseMemberExp * (traitEffect.allExpMult ?? 1) * (1 + fBonus.expMult)
+    );
     addExp(d, finalExp);
 
     if (d.level > prevLv) {
@@ -1088,6 +1114,47 @@ function handleClaimExpedition(expId) {
   update();
 }
 
+function handleUpgradeFacility(facilityKey) {
+  if (!canAct()) return;
+
+  const facilityDef = FACILITIES.find(f => f.key === facilityKey);
+  if (!facilityDef) return;
+
+  game.facility ??= { incubatorLevel: 0, trainingLevel: 0, kitchenLevel: 0 };
+  game.materials ??= { wood: 0, stone: 0, ore: 0 };
+
+  const currentLv = game.facility[facilityKey] ?? 0;
+  if (currentLv >= MAX_FACILITY_LEVEL) return;
+
+  const nextPlan = facilityDef.levels.find(l => l.level === currentLv + 1);
+  if (!nextPlan) return;
+
+  // 素材とお肉の所持数チェック
+  for (const [itemKey, needed] of Object.entries(nextPlan.cost)) {
+    const owned = ["wood", "stone", "ore"].includes(itemKey)
+      ? (game.materials[itemKey] ?? 0)
+      : (game.foods[itemKey] ?? 0);
+
+    if (owned < needed) {
+      alert(`素材が足りません！\n必要素材：${nextPlan.costText}`);
+      return;
+    }
+  }
+
+  // 消費してレベルアップ
+  for (const [itemKey, needed] of Object.entries(nextPlan.cost)) {
+    if (["wood", "stone", "ore"].includes(itemKey)) {
+      game.materials[itemKey] -= needed;
+    } else {
+      game.foods[itemKey] -= needed;
+    }
+  }
+  game.facility[facilityKey] = nextPlan.level;
+
+  addLog(`⛺ 【設備強化】「${facilityDef.icon} ${facilityDef.name}」が Lv.${nextPlan.level} になった！（${nextPlan.effectText}）`);
+  update();
+}
+
 const handlers = {
   onExplore: handleExplore,
   onSelectArea: (level) => {
@@ -1100,7 +1167,7 @@ const handlers = {
   onHatchAllWildEggs: handleHatchAllWildEggs,
   onToggleLock: handleToggleLock,
   onBossBattle: handleBossBattle,
-  onUpgradeIncubator: handleUpgradeIncubator,
+  onUpgradeFacility: handleUpgradeFacility,
   onShowPedigree: handleShowPedigree,
   onToggleExpDraftMember: handleToggleExpDraftMember,
   onSelectExpArea: handleSelectExpArea,
@@ -1232,6 +1299,7 @@ const handlers = {
 // 画面更新とセーブをまとめて行う関数
 function update() {
   syncTreasures(game.treasures);
+  syncFacilities(game.facility);
   checkAchievements();
   renderGame(
     game,

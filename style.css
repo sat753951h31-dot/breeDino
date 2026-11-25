@@ -2560,3 +2560,120 @@ button{
   color: #d81b60;
   font-weight: bold;
 }
+
+/* =========================================
+   設備タブ（建築素材バー ＆ 3施設カード）
+========================================= */
+.material-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.mat-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+}
+
+.mat-icon {
+  font-size: 1.8em;
+}
+
+.mat-name {
+  font-weight: bold;
+  font-size: 0.95em;
+}
+
+.mat-count {
+  font-size: 0.85em;
+  color: #495057;
+}
+
+#facilityList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.facility-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 12px;
+  background-color: #f4faf2;
+  border: 2px solid #aed581;
+}
+
+.facility-card.is-max {
+  background-color: #fffdf5;
+  border-color: #ffd54f;
+}
+
+.fac-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fac-card-header h3 {
+  margin: 0;
+}
+
+.fac-lv-badge {
+  font-size: 0.85em;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background-color: #dcedc8;
+  color: #33691e;
+}
+
+.fac-lv-badge.max {
+  background-color: #ff8f00;
+  color: #fff;
+}
+
+.fac-desc {
+  margin: 0;
+  font-size: 0.85em;
+  color: #555;
+}
+
+.fac-effect-box {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background-color: #ffffff;
+  border: 1px solid #dcedc8;
+  font-size: 0.88em;
+}
+
+.fac-next-effect {
+  margin-top: 4px;
+  color: #2e7d32;
+}
+
+.fac-upgrade-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 6px;
+}
+
+.fac-max-label {
+  margin-top: auto;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.9em;
+  color: #e65100;
+  padding: 8px;
+  background-color: #fff8e1;
+  border-radius: 6px;
+}

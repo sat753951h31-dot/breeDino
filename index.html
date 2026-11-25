@@ -30,6 +30,7 @@
   <button class="tab-btn" data-tab="tab-expedition">
     🏕️ 遠征 <span id="expTabBadge" class="tab-badge"></span>
   </button>
+  <button class="tab-btn" data-tab="tab-facility">⛺ 設備</button>
   <button class="tab-btn" data-tab="tab-dex">📖 図鑑</button>
   <button class="tab-btn" data-tab="tab-records">🏆 実績・記録</button>
 </nav>
@@ -173,6 +174,14 @@
   <h2>🏆 実績一覧</h2>
   <p id="achievementCount"></p>
   <div id="achievementList"></div>
+</section>
+
+<!-- ⑦ 設備タブ（#tab-expedition の下あたりに追加） -->
+<section id="tab-facility" class="tab-panel">
+  <h2>⛺ 拠点の設備強化</h2>
+  <p class="tab-desc">遠征で手に入る建築素材とお肉を納品して、拠点の施設をアップグレードできます。</p>
+  <div id="materialStorage"></div>
+  <div id="facilityList"></div>
 </section>
 
 <hr>

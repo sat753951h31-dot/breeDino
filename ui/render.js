@@ -18,6 +18,7 @@ import { TREASURES, MAX_TREASURE_LEVEL, getTreasureDesc } from "../data/treasure
 import { getTraitData } from "../data/traits.js";
 import { AREA_BOSSES } from "../data/bosses.js";
 import { INCUBATOR_LEVELS, MAX_INCUBATOR_LEVEL } from "../data/facility.js";
+import { FACILITIES, FACILITY_MATERIALS, MAX_FACILITY_LEVEL } from "../data/facilities.js";
 import { renderDinoAvatar } from "./dinoVisual.js";
 import { AREA_EXPEDITIONS } from "../data/expeditions.js";
 import { updateIdleStage } from "./battleStage.js";
@@ -1037,50 +1038,77 @@ function renderTreasures(game) {
   }).join("");
 }
 
-
 function renderFacility(game, handlers) {
-  const el = document.getElementById("facilityBox");
-  if (!el) return;
+  const matEl = document.getElementById("materialStorage");
+  const listEl = document.getElementById("facilityList");
+  if (!matEl || !listEl) return;
 
-  const currentLv = game.facility?.incubatorLevel ?? 0;
-  const isMax = currentLv >= MAX_INCUBATOR_LEVEL;
-  const currentInfo = INCUBATOR_LEVELS.find(item => item.level === currentLv);
-  const currentPercent = currentInfo ? Math.round(currentInfo.reduction * 100) : 0;
+  const mats = game.materials ?? { wood: 0, stone: 0, ore: 0 };
+  const foods = game.foods ?? { raw: 0, good: 0, premium: 0 };
 
-  if (isMax) {
-    el.innerHTML = `
-      <div class="facility-box is-max">
-        <div class="facility-info">
-          <strong>⛺ 孵化設備：Lv.MAX（${MAX_INCUBATOR_LEVEL} / ${MAX_INCUBATOR_LEVEL}）</strong>
-          <span>効果：すべての卵の孵化時間 <strong>${currentPercent}% 短縮中</strong> 👑</span>
+  // 1. 所持素材・お肉の一覧バー
+  matEl.innerHTML = `
+    <div class="material-bar">
+      ${FACILITY_MATERIALS.map(m => `
+        <div class="mat-item">
+          <span class="mat-icon">${m.icon}</span>
+          <div>
+            <div class="mat-name">${m.name}</div>
+            <div class="mat-count">所持: <strong>${mats[m.id] ?? 0}</strong>個 <small>(${m.desc})</small></div>
+          </div>
         </div>
-      </div>
-    `;
-    return;
-  }
-
-  const nextPlan = INCUBATOR_LEVELS.find(item => item.level === currentLv + 1);
-  const nextPercent = Math.round(nextPlan.reduction * 100);
-
-  // 必要素材が足りているか判定
-  const canAfford = Object.entries(nextPlan.cost).every(
-    ([type, needed]) => (game.foods[type] ?? 0) >= needed
-  );
-
-  el.innerHTML = `
-    <div class="facility-box">
-      <div class="facility-info">
-        <strong>⛺ 孵化設備：Lv.${currentLv} / ${MAX_INCUBATOR_LEVEL}</strong>
-        <span>現在効果：孵化時間 <strong>${currentPercent}% 短縮</strong> → 次Lvで <strong>${nextPercent}% 短縮</strong></span>
-        <div class="facility-cost">納品必要素材：${nextPlan.costText}</div>
-      </div>
-      <button id="upgradeIncubatorBtn" class="btn-upgrade" ${!canAfford ? "disabled" : ""}>
-        🍖 お肉を納品して強化
-      </button>
+      `).join("")}
     </div>
   `;
 
-  document.getElementById("upgradeIncubatorBtn").onclick = handlers.onUpgradeIncubator;
+  // 2. 3つの設備カードを描画
+  const facState = game.facility ?? { incubatorLevel: 0, trainingLevel: 0, kitchenLevel: 0 };
+
+  listEl.innerHTML = FACILITIES.map(fac => {
+    const currentLv = facState[fac.key] ?? 0;
+    const isMax = currentLv >= MAX_FACILITY_LEVEL;
+    const currentInfo = fac.levels.find(l => l.level === currentLv);
+    const nextPlan = fac.levels.find(l => l.level === currentLv + 1);
+
+    let canAfford = false;
+    if (nextPlan) {
+      canAfford = Object.entries(nextPlan.cost).every(([itemKey, needed]) => {
+        const owned = ["wood", "stone", "ore"].includes(itemKey)
+          ? (mats[itemKey] ?? 0)
+          : (foods[itemKey] ?? 0);
+        return owned >= needed;
+      });
+    }
+
+    return `
+      <div class="facility-card ${isMax ? "is-max" : ""}">
+        <div class="fac-card-header">
+          <h3>${fac.icon} ${fac.name}</h3>
+          <span class="fac-lv-badge ${isMax ? "max" : ""}">
+            ${isMax ? "👑 Lv.MAX" : `Lv.${currentLv} / ${MAX_FACILITY_LEVEL}`}
+          </span>
+        </div>
+        <p class="fac-desc">${fac.baseDesc}</p>
+        <div class="fac-effect-box">
+          <div>現在効果：<strong>${currentInfo ? currentInfo.effectText : "なし（未建設）"}</strong></div>
+          ${nextPlan ? `<div class="fac-next-effect">次の効果：<strong>${nextPlan.effectText}</strong></div>` : ""}
+        </div>
+        ${isMax
+          ? `<div class="fac-max-label">✨ 最大レベルまで強化済み！</div>`
+          : `<div class="fac-upgrade-footer">
+               <div class="facility-cost">必要素材：${nextPlan.costText}</div>
+               <button class="btn-upgrade" data-key="${fac.key}" ${!canAfford ? "disabled" : ""}>
+                 🔨 納品して強化する
+               </button>
+             </div>`
+        }
+      </div>
+    `;
+  }).join("");
+
+  listEl.querySelectorAll(".btn-upgrade").forEach(btn => {
+    btn.onclick = () => handlers.onUpgradeFacility(btn.dataset.key);
+  });
 }
 
 // 9. 遠征タブ全体の描画

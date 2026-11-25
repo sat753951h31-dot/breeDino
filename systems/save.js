@@ -61,11 +61,15 @@ export function loadGame() {
     save.bossCleared ??= { 1: false, 2: false, 3: false, 4: false, 5: false };
     save.stats.bossWins ??= 0;
     save.lastSavedAt ??= Date.now();
-    save.facility ??= { incubatorLevel: 0 };
-    save.facility.incubatorLevel ??= 0;
     save.expeditions ??= [];
     save.expeditionDraft ??= { areaLevel: 1, memberIds: [] };
     save.stats.expeditionsDone ??= 0;
+    save.materials ??= { wood: 0, stone: 0, ore: 0 };
+    save.facility ??= { incubatorLevel: 0, trainingLevel: 0, kitchenLevel: 0 };
+    save.facility.incubatorLevel ??= 0;
+    save.facility.trainingLevel ??= 0;
+    save.facility.kitchenLevel ??= 0;
+    save.facility.arenaLevel ??= 0;
 
     save.unlockedAchievements ??= [];
     if (!save.stats) {
@@ -118,8 +122,12 @@ export function loadGame() {
     lastSavedAt: Date.now(),
     expeditions: [],
     expeditionDraft: { areaLevel: 1, memberIds: [] },
+    materials: { wood: 0, stone: 0, ore: 0 },
     facility: {
-      incubatorLevel: 0
+      incubatorLevel: 0,
+      trainingLevel: 0,
+      kitchenLevel: 0,
+      arenaLevel: 0
     },
     items: {
       breedCrystal: 1
