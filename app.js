@@ -39,6 +39,7 @@ let selectedFemale = null;
 let filterName = "";
 let filterSpecies = "all";
 let filterSex = "all";
+let filterType = "all";
 let sortBy = "default";
 let lastActionTime = 0;
 let tickCounter = 0;
@@ -145,7 +146,7 @@ function rescueIfSoftlocked() {
 
 function getUnlockedExpeditionLevels() {
   if ((game.worldLoop ?? 1) > 1) return;
-  return [1, 2, 3, 4, 5].filter(lv => (game.areaProgress?.[lv] ?? 0) >= 100);
+  return [1, 2, 3, 4, 5, 6].filter(lv => (game.areaProgress?.[lv] ?? 0) >= 100);
 }
 
 // 現在の孵化時間倍率を取得するヘルパー
@@ -452,7 +453,7 @@ async function handleExplore(isAuto = false) {
       baseSpd: Math.floor(rawEnemy.baseSpd * (1 + ((game.worldLoop ?? 1) - 1) * 0.35))
     };
 
-    const result = battle(activeDino, stats, enemy, isCritical, addLog);
+    const result = battle(activeDino, stats, enemy, isCritical, addLog, Boolean(area.isSea));
     battleRecords.push({ enemy, win: result.win, isBoss: false });
 
     if (!result.win) {
@@ -916,7 +917,8 @@ async function handleBossBattle() {
     baseSpd: Math.floor(boss.baseSpd * (1 + ((game.worldLoop ?? 1) - 1) * 0.35))
   };
 
-  const result = battle(activeDino, stats, bossEnemy, wasCriticalAtStart, addLog);
+const area = AREAS.find(a => a.level === areaLevel) ?? AREAS[0];
+const result = battle(activeDino, stats, bossEnemy, wasCriticalAtStart, addLog, Boolean(area.isSea));
 
   await playExploreSequence(activeDino, areaLevel, [{ enemy: bossEnemy, win: result.win, isBoss: true }]);
 
@@ -1181,7 +1183,7 @@ function handleClaimExpedition(expId) {
       game.wildEggs.push(createWildEgg("large", "purple", currentHatchMult()));
       rewards.push(`🥚 野生卵(🟣 紫卵)`);
     }
-  } else {
+  } else if (course.areaLevel === 5) {
     // Lv.5 総力遠征
     const ore = Math.floor((3 + Math.floor(Math.random() * 3)) * powerMult);
     const stone = Math.floor((5 + Math.floor(Math.random() * 3)) * powerMult);
@@ -1189,6 +1191,21 @@ function handleClaimExpedition(expId) {
     const prem = Math.floor(4 * (powerMult >= 1.5 ? 1.5 : 1));
     const rarity = Math.random() < (0.45 + luckBonus) ? "rainbow" : "purple";
     const size = Math.random() < 0.45 ? "giant" : "large";
+    game.materials.ore += ore;
+    game.materials.stone += stone;
+    game.items.breedCrystal = (game.items.breedCrystal ?? 0) + crystal;
+    game.stats.crystalsEarned = (game.stats.crystalsEarned ?? 0) + crystal;
+    game.foods.premium += prem;
+    game.wildEggs.push(createWildEgg(size, rarity, currentHatchMult()));
+    rewards.push(`🔮 鉱石×${ore}`, `🪨 石材×${stone}`, `🥚 野生卵(${getEggRarityLabel(rarity)})`, `💎 結晶×${crystal}`, `✨ 極上肉×${prem}`);
+  } else if (course.areaLevel === 6) {
+    // Lv.6 深海神殿の宝物遠征
+    const ore = Math.floor((5 + Math.floor(Math.random() * 4)) * powerMult);
+    const stone = Math.floor((6 + Math.floor(Math.random() * 4)) * powerMult);
+    const crystal = Math.floor(8 * (powerMult >= 1.5 ? 1.5 : 1));
+    const prem = Math.floor(6 * (powerMult >= 1.5 ? 1.5 : 1));
+    const rarity = Math.random() < (0.65 + luckBonus) ? "rainbow" : "purple";
+    const size = Math.random() < 0.60 ? "giant" : "large";
     game.materials.ore += ore;
     game.materials.stone += stone;
     game.items.breedCrystal = (game.items.breedCrystal ?? 0) + crystal;
@@ -1292,7 +1309,7 @@ function getLoopExpMultiplier() {
 // 🌌 次の周回へ進む処理
 function handleAdvanceWorldLoop() {
   if (!canAct()) return;
-  if (!game.bossCleared?.[5] || isAutoExploring) return;
+  if (!game.bossCleared?.[6] || isAutoExploring) return;
 
   const currentLoop = game.worldLoop ?? 1;
   const nextLoop = currentLoop + 1;
@@ -1311,9 +1328,9 @@ function handleAdvanceWorldLoop() {
   // エリア進行状況のみリセット
   game.unlockedAreaLevel = 1;
   game.selectedAreaLevel = 1;
-  game.areaProgress = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-  game.areaCleared = { 1: false, 2: false, 3: false, 4: false, 5: false };
-  game.bossCleared = { 1: false, 2: false, 3: false, 4: false, 5: false };
+  game.areaProgress = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+  game.areaCleared = { 1: false, 2: false, 3: false, 4: false, 5: false, 6: false };
+  game.bossCleared = { 1: false, 2: false, 3: false, 4: false, 5: false, 6: false };
 
   addLog(`==============================`);
   addLog(`🌌 【新世界到達！】「${nextLoop}周目」の冒険が幕を開けた！`);
@@ -1648,7 +1665,7 @@ function update() {
   checkAchievements();
   renderGame(
     game,
-    { selectedMale, selectedFemale, filterName, filterSpecies, filterSex, sortBy, isAutoExploring },
+    { selectedMale, selectedFemale, filterName, filterSpecies, filterSex, filterType, sortBy, isAutoExploring },
     handlers
   );
   saveGame(game);
@@ -1675,6 +1692,11 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
   });
 });
 
+document.getElementById("filterType")?.addEventListener("change", (e) => {
+  filterType = e.target.value;
+  update();
+});
+
 document.getElementById("resetSave").addEventListener("click", () => {
   localStorage.clear();
   location.reload();
@@ -1699,17 +1721,20 @@ document.getElementById("resetFilterBtn")?.addEventListener("click", () => {
   filterName = "";
   filterSpecies = "all";
   filterSex = "all";
+  filterType = "all";
   sortBy = "default";
 
   // 画面上の入力欄・セレクトボックスの見た目も初期値に戻す
   const nameInput = document.getElementById("filterName");
   const speciesSelect = document.getElementById("filterSpecies");
   const sexSelect = document.getElementById("filterSex");
+  const typeSelect = document.getElementById("filterType");
   const sortSelect = document.getElementById("sortBy");
 
   if (nameInput) nameInput.value = "";
   if (speciesSelect) speciesSelect.value = "all";
   if (sexSelect) sexSelect.value = "all";
+  if (typeSelect) typeSelect.value = "all";
   if (sortSelect) sortSelect.value = "default";
 
   update();

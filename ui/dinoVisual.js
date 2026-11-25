@@ -38,7 +38,14 @@ const SPECIES_ARCHETYPE = {
   sky_overlord: "dragon",
   genesis_dragon: "dragon",
   boss_4: "dragon", // アビスドラゴン
-  boss_5: "dragon"  // バハムート・オメガ
+  boss_5: "dragon",  // バハムート・オメガ
+
+  pteranodon: "pterosaur",
+  plesio: "sauropod",
+  mosasaurus: "theropod",
+  leviathan: "dragon",
+  boss_6: "dragon",
+
 };
 
 // IDまたはモンスター名からシルエットタイプを自動判定する

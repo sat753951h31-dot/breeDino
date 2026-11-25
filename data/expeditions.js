@@ -33,5 +33,12 @@ export const AREA_EXPEDITIONS = [
     name: "Lv.5 竜王聖域の総力遠征（40分）",
     durationMs: 40 * 60 * 1000,
     rewardDesc: "🔮 鉱石×3〜5 / 🪨 石材×5〜 / 🌈 虹卵確率UP / 💎 結晶×5〜"
+  },
+  {
+    areaLevel: 6,
+    icon: "🌊",
+    name: "Lv.6 深海神殿の宝物遠征（60分）",
+    durationMs: 60 * 60 * 1000,
+    rewardDesc: "🌈 虹卵高確率 / 🔮 鉱石×5〜 / 💎 結晶×8〜 / ✨ 極上肉×6〜"
   }
 ];

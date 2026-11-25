@@ -130,7 +130,7 @@ export const ACHIEVEMENTS = [
   {
     id: "treasure_complete",
     title: "秘宝コレクター",
-    desc: "すべてのエリア秘宝（全5種）を発見する",
+    desc: "すべてのエリア秘宝（全6種）を発見する",
     rewardText: "✨ 極上肉 ×10",
     reward: { type: "premium", amount: 10 },
     getProgress: (game) => {

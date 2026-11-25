@@ -108,5 +108,27 @@ export const AREA_BOSSES = [
       premiumMeat: 5,
       text: "💎 生命の結晶×5 ＋ ✨ 極上肉×5"
     }
+  },
+  {
+    id: "boss_6",
+    areaLevel: 6,
+    name: "深海竜王オケアノス",
+    size: "giant",
+    huntLevel: 6,
+    baseAtk: 135,
+    baseHp: 1200,
+    baseSpd: 55,
+    expReward: 600,
+    firstReward: {
+      egg: { size: "giant", rarity: "rainbow" },
+      crystals: 10,
+      premiumMeat: 8,
+      text: "🌈 虹卵（巨大）＋ 💎 生命の結晶×10 ＋ ✨ 極上肉×8"
+    },
+    repeatReward: {
+      crystals: 4,
+      premiumMeat: 4,
+      text: "💎 生命の結晶×4 ＋ ✨ 極上肉×4"
+    }
   }
 ];

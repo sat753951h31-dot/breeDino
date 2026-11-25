@@ -144,6 +144,10 @@ export const DINO_SPECIES = [
     baseAtk: 230,
     baseHp: 600,
     baseSpd: 50
-  }
+  },
+  { id: "pteranodon", name: "プテラノドン", size: "normal", rarity: 2, huntLevel: 3, baseAtk: 26, baseHp: 85, baseSpd: 36 },
+  { id: "plesio", name: "プレシオサウルス", size: "large", rarity: 3, huntLevel: 6, baseAtk: 42, baseHp: 180, baseSpd: 30 },
+  { id: "mosasaurus", name: "モササウルス", size: "giant", rarity: 4, huntLevel: 6, baseAtk: 58, baseHp: 240, baseSpd: 34 },
+  { id: "leviathan", name: "リヴァイアサン", size: "giant", rarity: 4, huntLevel: 6, baseAtk: 68, baseHp: 280, baseSpd: 38 },
 
 ];

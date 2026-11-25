@@ -1,6 +1,7 @@
 import { DINO_SPECIES } from "../data/dinos.js";
 import { AREAS } from "../data/areas.js";
 import { getTraitData } from "../data/traits.js";
+import { getDinoType, getTypeMatchupMultiplier, getTerrainMultiplier } from "../data/types.js";
 
 const SIZE_RANK = {
   small: 1,
@@ -10,22 +11,32 @@ const SIZE_RANK = {
 };
 
 export function getEnemyForArea(areaLevel) {
-  const area = AREAS.find(a => a.level === areaLevel) ?? AREAS;
-  const candidates = DINO_SPECIES.filter(d => d.huntLevel === area.huntLevel);
+  const area = AREAS.find(a => a.level === areaLevel) ?? AREAS[0];
+  const allowedTypes = area.enemyTypes ?? ["carnivore", "herbivore", "pterosaur"];
 
-  const baseEnemy = candidates.length > 0
-    ? candidates[Math.floor(Math.random() * candidates.length)]
-    : DINO_SPECIES;
+  // 指定タイプに一致する恐竜をすべて抽出
+  const typeMatched = DINO_SPECIES.filter(d =>
+    allowedTypes.includes(getDinoType(d.id, d.name).id)
+  );
 
-  const scale = area.enemyScale ?? 1.0;
+  // その中でエリアの huntLevel に近い個体を優先（なければ同タイプ全体から選出）
+  const levelMatched = typeMatched.filter(d => d.huntLevel === area.huntLevel);
+  const pool = levelMatched.length > 0 ? levelMatched : (typeMatched.length > 0 ? typeMatched : DINO_SPECIES);
 
-  // 元の種族データを書き換えないようコピーして強化倍率を適用
+  const baseEnemy = pool[Math.floor(Math.random() * pool.length)];
+
+  // 別レベル帯の種族が選ばれた場合でもエリア相応の強さに自動調整
+  const baseHuntLv = baseEnemy.huntLevel ?? area.level;
+  const levelAdjust = Math.max(0.55, Math.min(1.6, area.level / Math.max(1, baseHuntLv)));
+  const scale = (area.enemyScale ?? 1.0) * levelAdjust;
+
   return {
     ...baseEnemy,
-    name: scale > 1 ? `【凶暴】${baseEnemy.name}` : baseEnemy.name,
-    baseAtk: Math.floor(baseEnemy.baseAtk * scale),
-    baseHp: Math.floor(baseEnemy.baseHp * scale),
-    baseSpd: Math.floor(baseEnemy.baseSpd * scale)
+    huntLevel: area.level,
+    name: (area.enemyScale ?? 1.0) > 1 ? `【凶暴】${baseEnemy.name}` : baseEnemy.name,
+    baseAtk: Math.max(1, Math.floor(baseEnemy.baseAtk * scale)),
+    baseHp: Math.max(10, Math.floor(baseEnemy.baseHp * scale)),
+    baseSpd: Math.max(1, Math.floor(baseEnemy.baseSpd * scale))
   };
 }
 
@@ -79,11 +90,41 @@ function performAttack(attackerName, atk, atkSpd, defenderName, defenderHp, defS
   return defenderHp - atk;
 }
 
-export function battle(player, playerStats, enemy, isCritical, addLog) {
+export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea = false) {
   let playerHp = Number(player.currentHp);
   if (Number.isNaN(playerHp)) playerHp = playerStats.hp;
 
   let enemyHp = enemy.baseHp;
+
+  // --- タイプ相性 ＆ 海エリア補正の計算 ---
+  const pType = getDinoType(player.speciesId, player.name);
+  const eType = getDinoType(enemy.speciesId ?? enemy.id, enemy.name);
+
+  const pMatchup = getTypeMatchupMultiplier(pType.id, eType.id);
+  const eMatchup = getTypeMatchupMultiplier(eType.id, pType.id);
+
+  const pTerrain = getTerrainMultiplier(pType.id, isSeaArea);
+  const eTerrain = getTerrainMultiplier(eType.id, isSeaArea);
+
+  // 相性ログの表示
+  if (pMatchup > 1) {
+    addLog(`🔥 タイプ有利！（${pType.icon}${pType.name} ＞ ${eType.icon}${eType.name}：攻撃力1.3倍）`);
+  } else if (pMatchup < 1) {
+    addLog(`💧 タイプ不利…（${pType.icon}${pType.name} ＜ ${eType.icon}${eType.name}：攻撃力0.75倍）`);
+  }
+
+  if (pType.id === "marine") {
+    addLog(isSeaArea
+      ? `🌊 【海の王者】海エリアのため ${player.name} の全能力が 1.35倍 に上昇！`
+      : `🏜️ 【陸上のハンデ】陸エリアのため ${player.name} の能力が 0.75倍 に低下…`
+    );
+  }
+  if (eType.id === "marine") {
+    addLog(isSeaArea
+      ? `🌊 野生の ${enemy.name} が海エリアの恩恵を受けている！`
+      : `🏜️ 野生の ${enemy.name} は陸上のため動きが鈍い！`
+    );
+  }
 
   // プレイヤーの特性効果を取得
   const playerTrait = getTraitData(player.trait);
@@ -96,14 +137,19 @@ export function battle(player, playerStats, enemy, isCritical, addLog) {
   const playerSizeMult = getSizeDamageMultiplier(playerSize, enemySize);
   const enemySizeMult = getSizeDamageMultiplier(enemySize, playerSize);
 
-  let playerAtk = Math.max(1, Math.floor(playerStats.atk * playerSizeMult));
-  const enemyAtk = Math.max(1, Math.floor(enemy.baseAtk * enemySizeMult));
+   // 👇 体格補正 × タイプ相性 × 海エリア地形補正 をすべて反映
+  let playerAtk = Math.max(1, Math.floor(playerStats.atk * playerSizeMult * pMatchup * pTerrain));
+  const enemyAtk = Math.max(1, Math.floor(enemy.baseAtk * enemySizeMult * eMatchup * eTerrain));
 
-  if (isCritical) {
+  // 👇 素早さにも海エリア地形補正を反映
+  const playerSpd = playerStats.spd * pTerrain;
+  const enemySpd = enemy.baseSpd * eTerrain;
+  
+    if (isCritical) {
     playerAtk = Math.max(1, Math.floor(playerAtk * 0.7));
   }
 
-  const playerFirst = playerStats.spd >= enemy.baseSpd;
+  const playerFirst = playerSpd >= enemySpd;
 
   addLog(`⚔️ ${enemy.name} (Lv${enemy.huntLevel}) と遭遇`);
 
@@ -123,10 +169,10 @@ export function battle(player, playerStats, enemy, isCritical, addLog) {
     turns++;
 
     if (playerFirst) {
-      enemyHp = performAttack(player.name, playerAtk, playerStats.spd, enemy.name, enemyHp, enemy.baseSpd, addLog, 0);
+      enemyHp = performAttack(player.name, playerAtk, playerSpd, enemy.name, enemyHp, enemySpd, addLog, 0);
       if (enemyHp <= 0) break;
 
-      playerHp = performAttack(enemy.name, enemyAtk, enemy.baseSpd, player.name, playerHp, playerStats.spd, addLog, playerDodgeBonus);
+      playerHp = performAttack(enemy.name, enemyAtk, enemySpd, player.name, playerHp, playerSpd, addLog, playerDodgeBonus);
       // 特性「不屈」の発動チェック
       if (playerHp <= 0 && playerTrait.effect.endure && !endureUsed) {
         playerHp = 1;
@@ -134,7 +180,7 @@ export function battle(player, playerStats, enemy, isCritical, addLog) {
         addLog(`❤️‍🔥 ${player.name} は特性【不屈】で致死ダメージをHP1で耐えた！`);
       }
     } else {
-      playerHp = performAttack(enemy.name, enemyAtk, enemy.baseSpd, player.name, playerHp, playerStats.spd, addLog, playerDodgeBonus);
+      playerHp = performAttack(enemy.name, enemyAtk, enemySpd, player.name, playerHp, playerSpd, addLog, playerDodgeBonus);
       if (playerHp <= 0 && playerTrait.effect.endure && !endureUsed) {
         playerHp = 1;
         endureUsed = true;
@@ -142,7 +188,7 @@ export function battle(player, playerStats, enemy, isCritical, addLog) {
       }
       if (playerHp <= 0) break;
 
-      enemyHp = performAttack(player.name, playerAtk, playerStats.spd, enemy.name, enemyHp, enemy.baseSpd, addLog, 0);
+      enemyHp = performAttack(player.name, playerAtk, playerSpd, enemy.name, enemyHp, enemySpd, addLog, 0);
     }
   }
 

@@ -40,6 +40,18 @@ export const TREASURES = [
     name: "竜王の王冠",
     dropChance: 0.08,
     effect: { atkMult: 0.10, hpMult: 0.10, spdMult: 0.10, standbyExp: 2 }
+  },
+  {
+    id: "sea_trident",
+    areaLevel: 6,
+    icon: "🔱",
+    name: "海神のトライデント",
+    dropChance: 0.08, // 8%でドロップ（重複でLv.5まで強化）
+    effect: {
+      atkMult: 0.06, // Lv.1につき攻撃 +6%（Lv.5で +30%）
+      hpMult: 0.06,  // Lv.1につきHP +6%（Lv.5で +30%）
+      spdMult: 0.06  // Lv.1につき素早さ +6%（Lv.5で +30%）
+    }
   }
 ];
 

@@ -21,6 +21,7 @@ import { FACILITIES, FACILITY_MATERIALS, MAX_FACILITY_LEVEL } from "../data/faci
 import { renderDinoAvatar } from "./dinoVisual.js";
 import { AREA_EXPEDITIONS } from "../data/expeditions.js";
 import { updateIdleStage } from "./battleStage.js";
+import { getDinoType, getTypeMatchupMultiplier, getTerrainMultiplier } from "../data/types.js";
 
 const RARITY_RANK = {
   white: 1,
@@ -177,11 +178,13 @@ function renderActiveDino(game) {
   const expPercent = isMaxLv ? 100 : Math.max(0, Math.min(100, (activeDino.exp / nextExp) * 100));
   const bloodlineBonus = getBloodlineBonus(activeDino);
   const trait = getTraitData(activeDino.trait);
+  const dinoType = getDinoType(activeDino.speciesId, activeDino.name);
 
   el.innerHTML = `
     <div class="partner-header">
       <div>
         <span class="badge-gen">F${activeDino.generation ?? 0}</span>
+        <span class="badge-type type-${dinoType.id}" title="${dinoType.desc}">${dinoType.icon} ${dinoType.name}</span>
         ${bloodlineBonus > 0 ? `<span class="badge-bloodline">📈上限+${bloodlineBonus}</span>` : ""}
         <span class="badge-rarity">${getRarityLabel(activeDino.rarityType)}</span>
         <span class="badge-trait" title="${trait.desc}">${trait.icon} ${trait.name}</span>
@@ -255,7 +258,10 @@ function renderExploreBox(game, state, handlers) {
   const currentLoop = game.worldLoop ?? 1;
   const isFinalBossCleared = Boolean(game.bossCleared?.[5]);
 
-  // el.innerHTML の冒頭に現在の周回数バッジを追加
+  const currentArea = AREAS.find(a => a.level === game.selectedAreaLevel) ?? AREAS[0];
+  const enemyDesc = currentArea.enemyDesc ?? "様々な恐竜";
+  const recommendDesc = currentArea.recommendDesc ?? "なし";
+
   el.innerHTML = `
     <div class="explore-box">
       <div class="explore-top-row">
@@ -263,6 +269,13 @@ function renderExploreBox(game, state, handlers) {
         <span class="world-loop-badge">🌐 現在 ${currentLoop}周目</span>
       </div>
       <select id="areaSelect" ${isAuto ? "disabled" : ""}>${areaOptions}</select>
+
+      <!-- 👇 出現モンスター ＆ おすすめタイプ表示 -->
+      <div class="area-matchup-guide">
+        <div>👾 出現モンスター：<strong>${enemyDesc}</strong></div>
+        <div>💡 おすすめ：<strong>${recommendDesc}</strong></div>
+      </div>
+
       <div class="gauge-label" style="margin-top: 8px;">
         <span>エリア探索率</span>
         <strong>${currentProgress}%</strong>
@@ -369,7 +382,7 @@ function renderDinoList(game, state, handlers) {
     speciesSelect.innerHTML = optionsHtml.join("");
   }
 
-  // 1. 名前・種族・性別で絞り込み
+  // 1. 名前・種族・性別・タイプで絞り込み
   let list = game.dinos.filter(dino => {
     if (keyword !== "") {
       const currentName = (dino.name ?? "").toLowerCase();
@@ -383,6 +396,12 @@ function renderDinoList(game, state, handlers) {
     }
     if (state.filterSex !== "all" && dino.sex !== state.filterSex) {
       return false;
+    }
+    if (state.filterType && state.filterType !== "all") {
+      const dinoType = getDinoType(dino.speciesId, dino.name);
+      if (dinoType.id !== state.filterType) {
+        return false;
+      }
     }
     return true;
   });
@@ -431,6 +450,7 @@ function renderDinoList(game, state, handlers) {
     const totalIv = dino.atkIv + dino.hpIv + dino.spdIv;
     const bloodlineBonus = getBloodlineBonus(dino);
     const trait = getTraitData(dino.trait);
+    const dinoType = getDinoType(dino.speciesId, dino.name);
 
     const card = document.createElement("div");
     card.className = "dino-card";
@@ -447,6 +467,7 @@ function renderDinoList(game, state, handlers) {
       <div class="card-top-row">
         <div class="card-badges">
           <span class="badge-gen">F${dino.generation ?? 0}</span>
+          <span class="badge-type type-${dinoType.id}" title="${dinoType.desc}">${dinoType.icon} ${dinoType.name}</span>
           ${bloodlineBonus > 0 ? `<span class="badge-bloodline">📈上限+${bloodlineBonus}</span>` : ""}
           <span class="badge-rarity">${getRarityLabel(dino.rarityType)}</span>
           <span class="badge-trait" title="${trait.desc}">${trait.icon} ${trait.name}</span>
@@ -735,11 +756,13 @@ function renderDex(game) {
 
     if (found) {
       const detail = getSpeciesDetail(species.id);
+      const dinoType = getDinoType(species.id, species.name);
       div.className = `dex-card is-found ${species.special ? "is-special" : ""}`;
 
       div.innerHTML = `
         <div class="dex-card-top">
           <span class="dex-no">No.${no}</span>
+          <span class="badge-type type-${dinoType.id}" title="${dinoType.desc}">${dinoType.icon} ${dinoType.name}</span>
           ${species.special ? `<span class="badge-special">✨ 特殊交配</span>` : `<span class="badge-normal">通常種</span>`}
         </div>
         <h4>${species.name}</h4>
@@ -1161,8 +1184,8 @@ function renderExpeditionTab(game, handlers) {
   if (!activeEl || !builderEl || !gridEl) return;
 
   const unlockedLevels = (game.worldLoop ?? 1) > 1
-    ? [1, 2, 3, 4, 5]
-    : [1, 2, 3, 4, 5].filter(lv => (game.areaProgress?.[lv] ?? 0) >= 100);
+  ? [1, 2, 3, 4, 5, 6]
+  : [1, 2, 3, 4, 5, 6].filter(lv => (game.areaProgress?.[lv] ?? 0) >= 100);
   const maxTeams = unlockedLevels.length;
   const activeExps = game.expeditions ?? [];
 
