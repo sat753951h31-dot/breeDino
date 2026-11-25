@@ -2,6 +2,7 @@ import { DEX_SPECIES } from "./dexSpecies.js";
 import { TREASURES, MAX_TREASURE_LEVEL } from "./treasures.js";
 import { AREA_BOSSES } from "./bosses.js";
 import { AREA_EXPEDITIONS } from "./expeditions.js";
+import { FACILITIES, MAX_FACILITY_LEVEL } from "./facilities.js";
 
 export const ACHIEVEMENTS = [
   {
@@ -238,6 +239,37 @@ export const ACHIEVEMENTS = [
       return {
         current: unlockedCount,
         max: AREA_EXPEDITIONS.length
+      };
+    }
+  },
+  {
+    id: "facility_first",
+    title: "拠点の開拓者",
+    desc: "いずれかの拠点設備を初めてアップグレードする",
+    rewardText: "🥩 上質肉 ×3",
+    reward: { type: "good", amount: 3 },
+    getProgress: (game) => {
+      const totalLv = FACILITIES.reduce(
+        (sum, f) => sum + (game.facility?.[f.key] ?? 0),
+        0
+      );
+      return { current: totalLv, max: 1 };
+    }
+  },
+  {
+    id: "facility_all_max",
+    title: "究極の恐竜王国",
+    desc: "すべての拠点設備（全4施設）を最大レベル（Lv.MAX）にする",
+    rewardText: "✨ 極上肉 ×30",
+    reward: { type: "premium", amount: 30 },
+    getProgress: (game) => {
+      const totalLv = FACILITIES.reduce(
+        (sum, f) => sum + Math.min(MAX_FACILITY_LEVEL, game.facility?.[f.key] ?? 0),
+        0
+      );
+      return {
+        current: totalLv,
+        max: FACILITIES.length * MAX_FACILITY_LEVEL
       };
     }
   }
