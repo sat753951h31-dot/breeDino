@@ -1173,7 +1173,8 @@ const handlers = {
     const readyEggs = game.wildEggs.filter(e => (e.hatchAt ?? 0) <= now);
     if (readyEggs.length === 0) return;
 
-    const summaryLines = [];
+    const highlights = [];
+    let normalCount = 0;
 
     readyEggs.forEach(egg => {
       const dino = hatchStarterEgg(egg);
@@ -1194,15 +1195,25 @@ const handlers = {
       const trait = getTraitData(dino.trait);
       const sexMark = dino.sex === "male" ? "♂️" : "♀️";
       const rarityLabel = getRarityLabel(dino.rarityType);
-      const tags = [];
-      if (isNewSpecies) tags.push("📖NEW!");
-      if (dino.mutant) tags.push("🧬MUTANT");
-      const tagStr = tags.length > 0 ? `【${tags.join("・")}】` : "";
+      const isRareColor = dino.color && dino.color !== "normal";
+      const isHighRarity = dino.rarityType === "purple" || dino.rarityType === "rainbow";
 
-      summaryLines.push(
-        `・${tagStr}${dino.name}${sexMark}（${rarityLabel} / ${getSizeLabel(dino.size)} / ${trait.icon}${trait.name}）`
-      );
+      // 当たり条件（図鑑NEW・突然変異・希少体色・紫/虹レア）に当てはまる個体だけピックアップ
+      if (isNewSpecies || dino.mutant || isRareColor || isHighRarity) {
+        const tags = [];
+        if (isNewSpecies) tags.push("📖NEW!");
+        if (dino.mutant) tags.push("🧬MUTANT");
+        if (isRareColor) tags.push(getColorLabel(dino.color));
+        const tagStr = tags.length > 0 ? `【${tags.join("・")}】` : "";
 
+        highlights.push(
+          `・${tagStr}${dino.name}${sexMark}（${rarityLabel} / ${getSizeLabel(dino.size)} / ${trait.icon}${trait.name}）`
+        );
+      } else {
+        normalCount++;
+      }
+
+      // 探索ログには全個体分を記録
       addLog(
         `🐣 野生の卵から「${dino.name}（F0 / ${sexMark} / ${rarityLabel} / ${trait.icon}${trait.name}）」が誕生した！`
       );
@@ -1214,11 +1225,17 @@ const handlers = {
     // 孵化済みの卵をリストから除外
     game.wildEggs = game.wildEggs.filter(e => (e.hatchAt ?? 0) > now);
 
-    alert(
-      `🐣 ${readyEggs.length}個の野生の卵が一斉に孵化しました！\n\n` +
-      summaryLines.join("\n")
-    );
+    // コンパクトな結果メッセージの組み立て
+    const msgParts = [`🐣 ${readyEggs.length}個の野生の卵が一斉に孵化しました！`];
 
+    if (highlights.length > 0) {
+      msgParts.push(`\n✨ 【注目個体】\n${highlights.join("\n")}`);
+    }
+    if (normalCount > 0) {
+      msgParts.push(`\n🦖 ほか ${normalCount}体 が仲間に加わりました！`);
+    }
+
+    alert(msgParts.join("\n"));
     update();
   },
   onToggleLock: handleToggleLock,
@@ -1519,6 +1536,119 @@ document.getElementById("clearLogBtn")?.addEventListener("click", () => {
 
 // 一括お別れボタン
 document.getElementById("bulkReleaseBtn")?.addEventListener("click", handleBulkRelease);
+
+// セーブ・ロード用モーダル制御
+const backupModal = document.getElementById("backupModal");
+const backupTitle = document.getElementById("backupModalTitle");
+const backupDesc = document.getElementById("backupModalDesc");
+const backupTextArea = document.getElementById("backupTextArea");
+const backupCopyBtn = document.getElementById("backupCopyBtn");
+const backupExecLoadBtn = document.getElementById("backupExecLoadBtn");
+
+// 📤 セーブ（書き出し）ボタン
+document.getElementById("exportSaveBtn")?.addEventListener("click", () => {
+  try {
+    saveGame(game);
+    // ログ履歴を除いてデータサイズをコンパクト化
+    const exportObj = { ...game, huntLogs: [] };
+    const jsonStr = JSON.stringify(exportObj);
+    const bytes = new TextEncoder().encode(jsonStr);
+    let binStr = "";
+    bytes.forEach(b => { binStr += String.fromCharCode(b); });
+    const encoded = btoa(binStr);
+
+    backupTitle.textContent = "📤 セーブデータの書き出し";
+    backupDesc.textContent = "下の文字列をすべてコピーして、メモ帳や別の端末に貼り付けてください。";
+    backupTextArea.value = encoded;
+    backupTextArea.readOnly = true;
+
+    backupCopyBtn.style.display = "inline-block";
+    backupExecLoadBtn.style.display = "none";
+    backupModal.style.display = "flex";
+
+    backupTextArea.focus();
+    backupTextArea.select();
+  } catch (e) {
+    alert("❌ セーブデータの書き出しに失敗しました。");
+    console.error(e);
+  }
+});
+
+// 📋 モーダル内のコピーボタン
+backupCopyBtn?.addEventListener("click", async () => {
+  backupTextArea.select();
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(backupTextArea.value);
+    } else {
+      document.execCommand("copy");
+    }
+    alert("📋 クリップボードにコピーしました！");
+  } catch {
+    alert("テキストを選択状態にしました。手動でコピー（Ctrl+C / 長押しコピー）してください。");
+  }
+});
+
+// 📥 ロード（読み込み）ボタン
+document.getElementById("importSaveBtn")?.addEventListener("click", () => {
+  backupTitle.textContent = "📥 セーブデータの読み込み";
+  backupDesc.textContent = "書き出したセーブ文字列を下の枠に貼り付けて「このデータで復元する」を押してください。";
+  backupTextArea.value = "";
+  backupTextArea.readOnly = false;
+
+  backupCopyBtn.style.display = "none";
+  backupExecLoadBtn.style.display = "inline-block";
+  backupModal.style.display = "flex";
+  backupTextArea.focus();
+});
+
+// ✅ 復元実行ボタン
+backupExecLoadBtn?.addEventListener("click", () => {
+  const rawInput = backupTextArea.value.trim();
+  if (!rawInput) {
+    alert("セーブ文字列が入力されていません。");
+    return;
+  }
+
+  try {
+    // 改行や空白が混ざっていても除去して復元
+    const cleanBase64 = rawInput.replace(/\s+/g, "");
+    const binStr = atob(cleanBase64);
+    const bytes = new Uint8Array(binStr.length);
+    for (let i = 0; i < binStr.length; i++) {
+      bytes[i] = binStr.charCodeAt(i);
+    }
+    const jsonStr = new TextDecoder().decode(bytes);
+    const parsed = JSON.parse(jsonStr);
+
+    if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.dinos)) {
+      alert("❌ 無効なセーブデータです。文字列がすべて貼り付けられているか確認してください。");
+      return;
+    }
+
+    const ok = confirm(
+      `⚠️ 現在のデータを上書きして復元しますか？\n（復元データの所持恐竜数: ${parsed.dinos.length}体）`
+    );
+    if (!ok) return;
+
+    // 👇 メモリ上の game 変数の中身も復元データに丸ごと入れ替える（自動保存による上書き防止）
+    Object.keys(game).forEach(key => delete game[key]);
+    Object.assign(game, parsed);
+
+    saveGame(game);
+    alert("✅ セーブデータを復元しました！画面を再読み込みします。");
+    location.reload();
+
+  } catch (e) {
+    alert("❌ 読み込みに失敗しました。\n古い形式の文字列か、途中で文字列が欠けている可能性があります。");
+    console.error(e);
+  }
+});
+
+// 閉じるボタン
+document.getElementById("backupCloseBtn")?.addEventListener("click", () => {
+  backupModal.style.display = "none";
+});
 
 // 1秒ごとのHP自動回復とタイマー更新
 setInterval(() => {
