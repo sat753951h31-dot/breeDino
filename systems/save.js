@@ -70,6 +70,8 @@ export function loadGame() {
     save.facility.trainingLevel ??= 0;
     save.facility.kitchenLevel ??= 0;
     save.facility.arenaLevel ??= 0;
+    save.worldLoop ??= 1;
+    save.stats.maxWorldLoop ??= 1;
 
     save.unlockedAchievements ??= [];
     if (!save.stats) {
@@ -123,6 +125,7 @@ export function loadGame() {
     expeditions: [],
     expeditionDraft: { areaLevel: 1, memberIds: [] },
     materials: { wood: 0, stone: 0, ore: 0 },
+    worldLoop: 1,
     facility: {
       incubatorLevel: 0,
       trainingLevel: 0,
@@ -141,6 +144,7 @@ export function loadGame() {
       dinosReleased: 0,
       bossWins: 0,
       expeditionsDone: 0,
+      maxWorldLoop: 1,
     },
 
   };

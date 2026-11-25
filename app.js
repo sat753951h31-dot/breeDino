@@ -13,7 +13,6 @@ import { getEggRarityLabel, getSizeLabel, getRarityLabel, getColorLabel } from "
 import { TREASURES, MAX_TREASURE_LEVEL, getTreasureDesc } from "./data/treasures.js";
 import { getTraitData } from "./data/traits.js";
 import { AREA_BOSSES } from "./data/bosses.js";
-import { INCUBATOR_LEVELS, MAX_INCUBATOR_LEVEL, getHatchTimeMultiplier } from "./data/facility.js";
 import { AREA_EXPEDITIONS } from "./data/expeditions.js";
 import { playExploreSequence } from "./ui/battleStage.js";
 import { FACILITIES, MAX_FACILITY_LEVEL, getFacilityBonuses } from "./data/facilities.js";
@@ -54,6 +53,24 @@ function discoverSpecies(dino) {
 function addLog(text) {
   game.huntLogs.unshift(text);
   game.huntLogs = game.huntLogs.slice(0, 100);
+}
+
+// 手持ちの恐竜も卵も0になった場合の救済措置（スターター卵の再選択を有効化）
+function rescueIfSoftlocked() {
+  const noDinos = (game.dinos?.length ?? 0) === 0;
+  const noWildEggs = (game.wildEggs?.length ?? 0) === 0;
+  const noBreedingEggs = (game.breedingEggs?.length ?? 0) === 0;
+
+  if (noDinos && noWildEggs && noBreedingEggs && game.starterSelected) {
+    game.starterEgg = rollStarterEgg();
+    game.starterSelected = false;
+    addLog(`🥚 手持ちの恐竜と卵がすべてなくなったため、新しい「スターター卵」が支給されました！`);
+  }
+}
+
+function getUnlockedExpeditionLevels() {
+  if ((game.worldLoop ?? 1) > 1) return;
+  return [1, 2, 3, 4, 5].filter(lv => (game.areaProgress?.[lv] ?? 0) >= 100);
 }
 
 // 現在の孵化時間倍率を取得するヘルパー
@@ -118,7 +135,7 @@ function processOfflineProgress() {
   const tBonus = getTreasureBonuses();
   const fBonus = getFacilityBonuses(game.facility);
   const totalStandbyExp = tBonus.standbyExp + fBonus.standbyExp;
-  const passiveExpGain = Math.floor(effectiveSec / 5) * tBonus.standbyExp;
+  const passiveExpGain = Math.floor(effectiveSec / 5) * totalStandbyExp;
 
   let healedCount = 0;
   let leveledUpCount = 0;
@@ -235,6 +252,11 @@ function handleRelease(dinoId) {
     return;
   }
 
+  const index = game.dinos.findIndex(d => d.uid === dinoId);
+  if (index === -1) return;
+
+  const dino = game.dinos[index]; // 👈 必ずチェックより先に定義する
+
   if (dino.locked) {
     alert(`🔒「${dino.name}」は保護ロック中のためお別れできません！\n先に🔒ボタンを押してロックを解除してください。`);
     return;
@@ -247,10 +269,6 @@ function handleRelease(dinoId) {
 
   if (game.expedition?.active && game.expedition.memberIds.includes(dino.uid)) return false;
 
-  const index = game.dinos.findIndex(d => d.uid === dinoId);
-  if (index === -1) return;
-
-  const dino = game.dinos[index];
   const reward = getReleaseReward(dino);
 
   // ミュータントや虹色の場合は警告を強める
@@ -348,7 +366,16 @@ async function handleExplore(isAuto = false) {
 
     const stats = calculateStats(activeDino);
     const isCritical = activeDino.currentHp <= stats.hp * 0.2;
-    const enemy = getEnemyForArea(areaLevel);
+    const rawEnemy = getEnemyForArea(areaLevel);
+    const loopMult = getLoopStatMultiplier();
+    const loopPrefix = (game.worldLoop ?? 1) > 1 ? `[${game.worldLoop}周目] ` : "";
+    const enemy = {
+      ...rawEnemy,
+      name: `${loopPrefix}${rawEnemy.name}`,
+      baseAtk: Math.floor(rawEnemy.baseAtk * loopMult),
+      baseHp: Math.floor(rawEnemy.baseHp * loopMult),
+      baseSpd: Math.floor(rawEnemy.baseSpd * (1 + ((game.worldLoop ?? 1) - 1) * 0.35))
+    };
 
     const result = battle(activeDino, stats, enemy, isCritical, addLog);
     battleRecords.push({ enemy, win: result.win, isBoss: false });
@@ -365,8 +392,9 @@ async function handleExplore(isAuto = false) {
     const streakMult = i === 1 ? 1.0 : i === 2 ? 1.2 : 1.5;
     const baseGainedExp = (area.expBonus + activeDino.level) * streakMult;
     const fBonus = getFacilityBonuses(game.facility);
-    const gainedExp = Math.floor(baseGainedExp * (activeTraitEffect.allExpMult ?? 1) * (1 + fBonus.expMult));
-
+    const gainedExp = Math.floor(
+      baseGainedExp * (activeTraitEffect.allExpMult ?? 1) * (1 + fBonus.expMult) * getLoopExpMultiplier()
+    );
     addLog(`✅ ${enemy.name} を倒した！（EXP +${gainedExp}${i > 1 ? ` / 連戦ボーナス×${streakMult}` : ""}）`);
     addExp(activeDino, gainedExp);
 
@@ -492,14 +520,16 @@ async function handleExplore(isAuto = false) {
       addLog(`🪦 ${activeDino.name}（Lv.${activeDino.level}）は力尽き、帰らぬ恐竜となった…`);
       addLog(`💐 形見として「💎 生命の結晶×1」と「✨ 極上肉×1」が残された`);
 
-      if (game.dinos.length === 0 && game.wildEggs.length === 0 && game.breedingEggs.length === 0) {
-        game.wildEggs.push(createWildEgg("normal", "white", currentHatchMult()));
-        addLog(`🥚 拠点の隅から「救済の白卵」が見つかった！`);
-      }
+      rescueIfSoftlocked();
+
+      const rescueMsg = !game.starterSelected
+        ? `\n\n🥚 恐竜がいなくなったため、画面上部に新しい「スターター卵」が用意されました！`
+        : "";
 
       alert(
         `🪦 ${activeDino.name} は瀕死の傷がもとで力尽きました…\n` +
-        `形見として「💎 生命の結晶×1」「✨ 極上肉×1」を手に入れました。`
+        `形見として「💎 生命の結晶×1」「✨ 極上肉×1」を手に入れました。` +
+        rescueMsg
       );
     } else {
       activeDino.currentHp = 1;
@@ -801,7 +831,16 @@ async function handleBossBattle() {
   addLog(`🔥 【エリアボス戦】${activeDino.name} が「${boss.name}」に挑んだ！`);
 
   // 元のボスデータを書き換えないようコピーして戦闘
-  const bossEnemy = { ...boss };
+  const loopMult = getLoopStatMultiplier();
+  const loopPrefix = (game.worldLoop ?? 1) > 1 ? `[${game.worldLoop}周目] ` : "";
+  const bossEnemy = {
+    ...boss,
+    name: `${loopPrefix}${boss.name}`,
+    baseAtk: Math.floor(boss.baseAtk * loopMult),
+    baseHp: Math.floor(boss.baseHp * loopMult),
+    baseSpd: Math.floor(boss.baseSpd * (1 + ((game.worldLoop ?? 1) - 1) * 0.35))
+  };
+
   const result = battle(activeDino, stats, bossEnemy, wasCriticalAtStart, addLog);
 
   await playExploreSequence(activeDino, areaLevel, [{ enemy: bossEnemy, win: result.win, isBoss: true }]);
@@ -814,7 +853,7 @@ async function handleBossBattle() {
 
       if (selectedMale === activeDino.uid) selectedMale = null;
       if (selectedFemale === activeDino.uid) selectedFemale = null;
-      game.activeDinoId = game.dinos.length > 0 ? game.dinos.uid : null;
+      game.activeDinoId = game.dinos.length > 0 ? game.dinos[0].uid : null;
 
       game.stats.dinosLost = (game.stats.dinosLost ?? 0) + 1;
       game.items.breedCrystal = (game.items.breedCrystal ?? 0) + 1;
@@ -823,10 +862,17 @@ async function handleBossBattle() {
       addLog(`🪦 ${activeDino.name} はボス「${boss.name}」の前に力尽きた…`);
       addLog(`💐 形見として「💎 生命の結晶×1」と「✨ 極上肉×1」が残された`);
 
-      if (game.dinos.length === 0 && game.wildEggs.length === 0 && game.breedingEggs.length === 0) {
-        game.wildEggs.push(createWildEgg("normal", "white"));
-      }
-      alert(`🪦 ${activeDino.name} はボスに敗れ力尽きました…`);
+      rescueIfSoftlocked();
+
+      const rescueMsg = !game.starterSelected
+        ? `\n\n🥚 恐竜がいなくなったため、画面上部に新しい「スターター卵」が用意されました！`
+        : "";
+
+      alert(
+        `🪦 ${activeDino.name} はボスに敗れ力尽きました…\n` +
+        `形見として「💎 生命の結晶×1」「✨ 極上肉×1」を手に入れました。` +
+        rescueMsg
+      );
     } else {
       // 健康出撃で敗北 → HP1で生還
       activeDino.currentHp = 1;
@@ -840,7 +886,10 @@ async function handleBossBattle() {
   // --- ボス勝利時の処理 ---
   game.stats.bossWins = (game.stats.bossWins ?? 0) + 1;
   const traitEffect = getTraitData(activeDino.trait).effect;
-  const gainedExp = Math.floor(boss.expReward * (traitEffect.allExpMult ?? 1));
+  const fBonus = getFacilityBonuses(game.facility);
+  const gainedExp = Math.floor(
+    boss.expReward * (traitEffect.allExpMult ?? 1) * (1 + fBonus.expMult) * getLoopExpMultiplier()
+  );
 
   addLog(`👑 【ボス撃破！】「${boss.name}」を打ち倒した！（EXP +${gainedExp}）`);
   addExp(activeDino, gainedExp);
@@ -918,11 +967,6 @@ function getBusyExpeditionDinoIds() {
   return set;
 }
 
-// 探索率100%達成済みのエリアレベル一覧を取得（これが遠征先＆チーム枠数になる）
-function getUnlockedExpeditionLevels() {
-  return [1, 2, 3, 4, 5].filter(lv => (game.areaProgress?.[lv] ?? 0) >= 100);
-}
-
 function handleToggleExpDraftMember(dinoId) {
   game.expeditionDraft ??= { areaLevel: 1, memberIds: [] };
   const busyIds = getBusyExpeditionDinoIds();
@@ -960,7 +1004,7 @@ function handleStartExpedition() {
     return;
   }
 
-  const draft = game.expeditionDraft ?? { areaLevel: unlockedLevels ?? 1, memberIds: [] };
+  const draft = game.expeditionDraft ?? { areaLevel: unlockedLevels[0] ?? 1, memberIds: [] };
   const busyIds = getBusyExpeditionDinoIds();
 
   // 有効な待機メンバーだけ抽出
@@ -973,8 +1017,8 @@ function handleStartExpedition() {
     return;
   }
 
-  const targetLevel = unlockedLevels.includes(draft.areaLevel) ? draft.areaLevel : unlockedLevels;
-  const course = AREA_EXPEDITIONS.find(c => c.areaLevel === targetLevel) ?? AREA_EXPEDITIONS;
+  const targetLevel = unlockedLevels.includes(draft.areaLevel) ? draft.areaLevel : unlockedLevels[0];
+  const course = AREA_EXPEDITIONS.find(c => c.areaLevel === targetLevel) ?? AREA_EXPEDITIONS[0];
 
   game.expeditions.push({
     id: crypto.randomUUID(),
@@ -1001,7 +1045,7 @@ function handleClaimExpedition(expId) {
   const exp = game.expeditions[index];
   if (Date.now() < exp.endAt) return;
 
-  const course = AREA_EXPEDITIONS.find(c => c.areaLevel === exp.areaLevel) ?? AREA_EXPEDITIONS;
+  const course = AREA_EXPEDITIONS.find(c => c.areaLevel === exp.areaLevel) ?? AREA_EXPEDITIONS[0];
   const members = exp.memberIds
     .map(id => game.dinos.find(d => d.uid === id))
     .filter(Boolean);
@@ -1158,6 +1202,51 @@ function handleUpgradeFacility(facilityKey) {
   update();
 }
 
+// 現在の周回数に応じた敵ステータス倍率（1周目:1倍, 2周目:2.2倍, 3周目:4.84倍...）
+function getLoopStatMultiplier() {
+  const loop = game.worldLoop ?? 1;
+  return Math.pow(2.2, loop - 1);
+}
+
+// 現在の周回数に応じた経験値倍率（1周目:1倍, 2周目:1.6倍, 3周目:2.56倍...）
+function getLoopExpMultiplier() {
+  const loop = game.worldLoop ?? 1;
+  return Math.pow(1.6, loop - 1);
+}
+
+// 🌌 次の周回へ進む処理
+function handleAdvanceWorldLoop() {
+  if (!canAct()) return;
+  if (!game.bossCleared?.[5] || isAutoExploring) return;
+
+  const currentLoop = game.worldLoop ?? 1;
+  const nextLoop = currentLoop + 1;
+
+  const ok = confirm(
+    `🌌 【次の周回へ進む】\n` +
+    `現在（${currentLoop}周目）のエリア進行度をリセットし、「${nextLoop}周目」へ進みますか？\n\n` +
+    `・敵とボスの強さがさらに上昇します（初回撃破報酬も復活！）\n` +
+    `・恐竜、卵、アイテム、設備、秘宝、遠征部隊枠はすべて引き継がれます`
+  );
+  if (!ok) return;
+
+  game.worldLoop = nextLoop;
+  game.stats.maxWorldLoop = Math.max(game.stats.maxWorldLoop ?? 1, nextLoop);
+
+  // エリア進行状況のみリセット
+  game.unlockedAreaLevel = 1;
+  game.selectedAreaLevel = 1;
+  game.areaProgress = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  game.areaCleared = { 1: false, 2: false, 3: false, 4: false, 5: false };
+  game.bossCleared = { 1: false, 2: false, 3: false, 4: false, 5: false };
+
+  addLog(`==============================`);
+  addLog(`🌌 【新世界到達！】「${nextLoop}周目」の冒険が幕を開けた！`);
+  addLog(`==============================`);
+
+  update();
+}
+
 const handlers = {
   onExplore: handleExplore,
   onSelectArea: (level) => {
@@ -1247,6 +1336,7 @@ const handlers = {
   onStartExpedition: handleStartExpedition,
   onClaimExpedition: handleClaimExpedition,
   onToggleAutoExplore: handleToggleAutoExplore,
+  onAdvanceWorldLoop: handleAdvanceWorldLoop,
   onSetActive: (dinoId) => {
     if (getBusyExpeditionDinoIds().has(dinoId)) {
       alert("🏕️ 遠征中の恐竜は育成パートナーに設定できません！帰還を待ってください。");
@@ -1408,6 +1498,7 @@ const handlers = {
 
 // 画面更新とセーブをまとめて行う関数
 function update() {
+  rescueIfSoftlocked();
   syncTreasures(game.treasures);
   syncFacilities(game.facility);
   checkAchievements();
@@ -1654,23 +1745,24 @@ document.getElementById("backupCloseBtn")?.addEventListener("click", () => {
 setInterval(() => {
   tickCounter++;
   const tBonus = getTreasureBonuses();
-  const givePassiveExp = (tickCounter % 5 === 0) && (tBonus.standbyExp > 0);
-  
+  const fBonus = getFacilityBonuses(game.facility);
+  const totalStandbyExp = tBonus.standbyExp + fBonus.standbyExp;
+  const givePassiveExp = (tickCounter % 5 === 0) && (totalStandbyExp > 0);
+
   game.dinos.forEach(dino => {
     if (dino.uid === game.activeDinoId) return;
-    // 待機中のHP自動回復（毎秒）
     const stats = calculateStats(dino);
     const healPerSec = Math.max(1, stats.hp * 0.01);
     dino.currentHp = Math.min(stats.hp, dino.currentHp + healPerSec);
 
-    // 秘宝効果による待機経験値（5秒ごと）
     if (givePassiveExp) {
-      addExp(dino, tBonus.standbyExp);
+      addExp(dino, totalStandbyExp);
     }
   });
   renderTick(game, handlers);
   saveGame(game);
 }, 1000);
+
 
 // 初回描画
 update();

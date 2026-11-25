@@ -17,7 +17,6 @@ import { getChildMaxLevelInfo, calculateChildMaxLevel, getRequiredCrystals } fro
 import { TREASURES, MAX_TREASURE_LEVEL, getTreasureDesc } from "../data/treasures.js";
 import { getTraitData } from "../data/traits.js";
 import { AREA_BOSSES } from "../data/bosses.js";
-import { INCUBATOR_LEVELS, MAX_INCUBATOR_LEVEL } from "../data/facility.js";
 import { FACILITIES, FACILITY_MATERIALS, MAX_FACILITY_LEVEL } from "../data/facilities.js";
 import { renderDinoAvatar } from "./dinoVisual.js";
 import { AREA_EXPEDITIONS } from "../data/expeditions.js";
@@ -253,9 +252,16 @@ function renderExploreBox(game, state, handlers) {
   const isBossUnlocked = currentProgress >= 100 && areaBoss;
   const isBossCleared = game.bossCleared?.[game.selectedAreaLevel] ?? false;
 
+  const currentLoop = game.worldLoop ?? 1;
+  const isFinalBossCleared = Boolean(game.bossCleared?.[5]);
+
+  // el.innerHTML の冒頭に現在の周回数バッジを追加
   el.innerHTML = `
     <div class="explore-box">
-      <label for="areaSelect">🗺️ 探索先エリア</label>
+      <div class="explore-top-row">
+        <label for="areaSelect">🗺️ 探索先エリア</label>
+        <span class="world-loop-badge">🌐 現在 ${currentLoop}周目</span>
+      </div>
       <select id="areaSelect" ${isAuto ? "disabled" : ""}>${areaOptions}</select>
       <div class="gauge-label" style="margin-top: 8px;">
         <span>エリア探索率</span>
@@ -300,6 +306,16 @@ function renderExploreBox(game, state, handlers) {
           ${isBossCleared ? "👑" : "🔥"} ボス戦：${areaBoss.name} に挑む
         </button>
       ` : ""}
+
+      ${isFinalBossCleared ? `
+        <button
+          id="nextLoopBtn"
+          class="btn-next-loop"
+          ${isAuto ? "disabled" : ""}
+        >
+          🌌 次の周回（${currentLoop + 1}周目）へ進む
+        </button>
+      ` : ""}
     </div>
   `;
 
@@ -314,7 +330,10 @@ function renderExploreBox(game, state, handlers) {
   if (bossBtn) {
     bossBtn.onclick = handlers.onBossBattle;
   }
-
+  const nextLoopBtn = document.getElementById("nextLoopBtn");
+  if (nextLoopBtn) {
+    nextLoopBtn.onclick = handlers.onAdvanceWorldLoop;
+  }
   updateIdleStage(activeDino, game.selectedAreaLevel);
 }
 
@@ -960,7 +979,7 @@ function renderBreedingStage(game, selectedMale, selectedFemale) {
     const ids = [male.speciesId, female.speciesId].sort();
     const special = SPECIAL_BREEDS.find(b => {
       const pIds = [...b.parents].sort();
-      return pIds === ids && pIds === ids;
+      return pIds[0] === ids[0] && pIds[1] === ids[1];
     });
 
     const isCapped = (lvInfo.inheritedBonus + lvInfo.trainBonus) > lvInfo.maxAllowedBonus;
@@ -1118,7 +1137,9 @@ function renderExpeditionTab(game, handlers) {
   const gridEl = document.getElementById("expeditionDinoGrid");
   if (!activeEl || !builderEl || !gridEl) return;
 
-  const unlockedLevels = [1, 2, 3, 4, 5].filter(lv => (game.areaProgress?.[lv] ?? 0) >= 100);
+  const unlockedLevels = (game.worldLoop ?? 1) > 1
+    ? [1, 2, 3, 4, 5]
+    : [1, 2, 3, 4, 5].filter(lv => (game.areaProgress?.[lv] ?? 0) >= 100);
   const maxTeams = unlockedLevels.length;
   const activeExps = game.expeditions ?? [];
 
@@ -1146,7 +1167,7 @@ function renderExpeditionTab(game, handlers) {
       ? `<p class="empty-msg">現在出撃中の遠征隊はありません。</p>`
       : `<div class="active-exp-grid">
           ${activeExps.map(exp => {
-            const course = AREA_EXPEDITIONS.find(c => c.areaLevel === exp.areaLevel) ?? AREA_EXPEDITIONS;
+            const course = AREA_EXPEDITIONS.find(c => c.areaLevel === exp.areaLevel) ?? AREA_EXPEDITIONS[0];
             const remain = Math.max(0, Math.ceil((exp.endAt - now) / 1000));
             const isDone = remain <= 0;
             const memberNames = exp.memberIds
@@ -1179,8 +1200,8 @@ function renderExpeditionTab(game, handlers) {
   const busyIds = new Set();
   activeExps.forEach(e => e.memberIds.forEach(id => busyIds.add(id)));
 
-  const draft = game.expeditionDraft ?? { areaLevel: unlockedLevels, memberIds: [] };
-  const selectedLevel = unlockedLevels.includes(draft.areaLevel) ? draft.areaLevel : unlockedLevels;
+  const draft = game.expeditionDraft ?? { areaLevel: unlockedLevels[0], memberIds: [] };
+  const selectedLevel = unlockedLevels.includes(draft.areaLevel) ? draft.areaLevel : unlockedLevels[0];
   const validDraftMembers = draft.memberIds.filter(
     id => id !== game.activeDinoId && !busyIds.has(id) && game.dinos.some(d => d.uid === id)
   );
@@ -1194,7 +1215,7 @@ function renderExpeditionTab(game, handlers) {
     }).length;
     const luckPercent = luckyCount * 10;
 
-    const selectedCourse = AREA_EXPEDITIONS.find(item => item.areaLevel === selectedLevel) ?? AREA_EXPEDITIONS;
+    const selectedCourse = AREA_EXPEDITIONS.find(item => item.areaLevel === selectedLevel) ?? AREA_EXPEDITIONS[0];
 
     const optionsHtml = unlockedLevels.map(lv => {
       const c = AREA_EXPEDITIONS.find(item => item.areaLevel === lv);
@@ -1231,11 +1252,6 @@ function renderExpeditionTab(game, handlers) {
     };
     document.getElementById("startExpBtn").onclick = handlers.onStartExpedition;
   }
-
-  document.getElementById("expAreaSelect").onchange = (e) => {
-    handlers.onSelectExpArea(Number(e.target.value));
-  };
-  document.getElementById("startExpBtn").onclick = handlers.onStartExpedition;
 
   // 3. 待機恐竜カード一覧（🍀幸運持ち ＞ レベル順 ＞ 遠征中は下へ自動整列）
   const standbyDinos = game.dinos
