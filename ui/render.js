@@ -1260,6 +1260,7 @@ function renderExpeditionTab(game, handlers) {
       return d?.trait === "hunter";
     }).length;
     const luckPercent = luckyCount * 10;
+    const standbyCount = game.dinos.filter(d => d.uid !== game.activeDinoId && !busyIds.has(d.uid)).length;
 
     const selectedCourse = AREA_EXPEDITIONS.find(item => item.areaLevel === selectedLevel) ?? AREA_EXPEDITIONS[0];
 
@@ -1282,9 +1283,14 @@ function renderExpeditionTab(game, handlers) {
         </div>
         <div class="exp-setup-row">
           <select id="expAreaSelect">${optionsHtml}</select>
-          <button id="startExpBtn" class="btn-exp-start" ${!canLaunch ? "disabled" : ""}>
-            ${activeExps.length >= maxTeams ? "部隊枠がいっぱいです" : "🚩 このチームで遠征に出発"}
-          </button>
+          <div class="exp-action-btns">
+            <button id="autoSelectExpBtn" class="btn-exp-auto" ${standbyCount === 0 ? "disabled" : ""} title="幸運・高レア・低レベルを優先して最大3体自動選択">
+              ✨ おすすめ編成
+            </button>
+            <button id="startExpBtn" class="btn-exp-start" ${!canLaunch ? "disabled" : ""}>
+              ${activeExps.length >= maxTeams ? "部隊枠がいっぱいです" : "🚩 遠征に出発"}
+            </button>
+          </div>
         </div>
         <div class="exp-reward-preview">
           🎁 <strong>主な獲得報酬：</strong>${selectedCourse.rewardDesc}
@@ -1297,6 +1303,9 @@ function renderExpeditionTab(game, handlers) {
       handlers.onSelectExpArea(Number(e.target.value));
     };
     document.getElementById("startExpBtn").onclick = handlers.onStartExpedition;
+    document.getElementById("autoSelectExpBtn").onclick = handlers.onAutoSelectExpMembers;
+    document.getElementById("startExpBtn").onclick = handlers.onStartExpedition;
+
   }
 
   // 3. 待機恐竜カード一覧（🍀幸運持ち ＞ レベル順 ＞ 遠征中は下へ自動整列）

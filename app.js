@@ -1069,6 +1069,40 @@ function handleSelectExpArea(areaLevel) {
   update();
 }
 
+function handleAutoSelectExpMembers() {
+  game.expeditionDraft ??= { areaLevel: 1, memberIds: [] };
+  const busyIds = getBusyExpeditionDinoIds();
+
+  // 派遣可能な待機恐竜を抽出
+  const candidates = game.dinos.filter(
+    d => d.uid !== game.activeDinoId && !busyIds.has(d.uid)
+  );
+
+  if (candidates.length === 0) {
+    alert("派遣できる待機恐竜がいません！");
+    return;
+  }
+
+  const rarityRank = { rainbow: 4, purple: 3, blue: 2, white: 1 };
+
+  // 1. 幸運持ち ＞ 2. レア度が高い順 ＞ 3. レベルが低い順 で並べ替え
+  const sorted = [...candidates].sort((a, b) => {
+    const luckyA = a.trait === "hunter" ? 1 : 0;
+    const luckyB = b.trait === "hunter" ? 1 : 0;
+    if (luckyA !== luckyB) return luckyB - luckyA;
+
+    const rA = rarityRank[a.rarityType] ?? 1;
+    const rB = rarityRank[b.rarityType] ?? 1;
+    if (rA !== rB) return rB - rA;
+
+    return a.level - b.level;
+  });
+
+  // 上位3体を選択状態にセット
+  game.expeditionDraft.memberIds = sorted.slice(0, 3).map(d => d.uid);
+  update();
+}
+
 function handleStartExpedition() {
   if (!canAct()) return;
 
@@ -1429,6 +1463,7 @@ const handlers = {
   onClaimExpedition: handleClaimExpedition,
   onToggleAutoExplore: handleToggleAutoExplore,
   onAdvanceWorldLoop: handleAdvanceWorldLoop,
+  onAutoSelectExpMembers: handleAutoSelectExpMembers,
   onSetActive: (dinoId) => {
     if (getBusyExpeditionDinoIds().has(dinoId)) {
       alert("🏕️ 遠征中の恐竜は育成パートナーに設定できません！帰還を待ってください。");
