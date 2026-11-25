@@ -2924,3 +2924,24 @@ button{
   border: 1px solid #dee2e6;
   border-radius: 8px;
 }
+
+
+/* =========================================
+   スマホ用：検索・絞り込みバーの2列折り返し修正
+========================================= */
+@media (max-width: 768px) {
+  .dino-controls {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px;
+  }
+
+  .control-action {
+    grid-column: auto !important;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .btn-reset-filter {
+    width: 100%;
+  }
+}
