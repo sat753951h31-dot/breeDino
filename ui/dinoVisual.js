@@ -1,76 +1,17 @@
-// 種族IDごとのシルエットタイプ定義
-// 種族ID・ボスIDごとのシルエットタイプ定義
-const SPECIES_ARCHETYPE = {
-  // 肉食獣脚類
-  compy: "theropod",
-  raptor: "theropod",
-  shadowraptor: "theropod",
-  trex: "theropod",
-  spino: "theropod",
-  giganoto: "theropod",
-  allo: "theropod",
-  omega_rex: "theropod",
-  tyrannospino: "theropod",
-  boss_1: "theropod", // キングラプトル
-  boss_2: "theropod", // エンシェントレックス
-  boss_3: "theropod", // マグマギガノト
-
-  // 首長竜脚類
-  brachio: "sauropod",
-  gigabrachio: "sauropod",
-
-  // 角竜類
-  triceratops: "ceratopsian",
-  aegistops: "ceratopsian",
-
-  // 装甲・剣竜類
-  stego: "armored",
-  ankylo: "armored",
-  armored_allo: "armored",
-  fortress_titan: "armored",
-
-  // 翼竜類
-  quetzal: "pterosaur",
-
-  // ドラゴン・ハイブリッド系
-  dragonraptor: "dragon",
-  chaosdragon: "dragon",
-  sky_overlord: "dragon",
-  genesis_dragon: "dragon",
-  boss_4: "dragon", // アビスドラゴン
-  boss_5: "dragon",  // バハムート・オメガ
-
-  pteranodon: "pterosaur",
-  plesio: "sauropod",
-  mosasaurus: "theropod",
-  leviathan: "dragon",
-  boss_6: "dragon",
-
-};
+import { DINO_SPECIES } from "../data/dinos.js";
+import { SPECIAL_BREEDS } from "../data/specialBreeding.js";
+import { AREA_BOSSES } from "../data/bosses.js";
 
 // IDまたはモンスター名からシルエットタイプを自動判定する
-function resolveArchetype(speciesId = "", enemyName = "") {
-  if (SPECIES_ARCHETYPE[speciesId]) {
-    return SPECIES_ARCHETYPE[speciesId];
-  }
+function resolveArchetype(speciesId = "") {
+  const normal = DINO_SPECIES.find(d => d.id === speciesId);
+  if (normal?.archetype) return normal.archetype;
 
-  const key = `${speciesId} ${enemyName}`.toLowerCase();
+  const special = SPECIAL_BREEDS.find(b => b.result.id === speciesId);
+  if (special?.result?.archetype) return special.result.archetype;
 
-  if (key.includes("dragon") || key.includes("ドラゴン") || key.includes("竜王") || key.includes("竜神") || key.includes("バハムート") || key.includes("ワイバーン")) {
-    return "dragon";
-  }
-  if (key.includes("ptera") || key.includes("quetzal") || key.includes("プテラ") || key.includes("ケツァル") || key.includes("翼竜")) {
-    return "pterosaur";
-  }
-  if (key.includes("brachio") || key.includes("diplo") || key.includes("ブラキオ") || key.includes("ディプロ") || key.includes("首長")) {
-    return "sauropod";
-  }
-  if (key.includes("tricera") || key.includes("tops") || key.includes("トリケラ") || key.includes("トプス") || key.includes("角竜")) {
-    return "ceratopsian";
-  }
-  if (key.includes("stego") || key.includes("ankylo") || key.includes("armor") || key.includes("ステゴ") || key.includes("アンキロ") || key.includes("装甲") || key.includes("タイタン")) {
-    return "armored";
-  }
+  const boss = AREA_BOSSES.find(b => b.id === speciesId);
+  if (boss?.archetype) return boss.archetype;
 
   return "theropod";
 }

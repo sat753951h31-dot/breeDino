@@ -5,6 +5,8 @@ export const SPECIAL_BREEDS = [
     result: {
       id: "shadowraptor",
       name: "シャドウラプトル",
+      type: "carnivore",
+      archetype: "theropod",
       size: "small",
       rarity: 3,
       baseAtk: 42,
@@ -19,6 +21,8 @@ export const SPECIAL_BREEDS = [
     result: {
       id: "aegistops",
       name: "イージストプス",
+      type: "herbivore",
+      archetype: "ceratopsian",
       size: "normal",
       rarity: 3,
       baseAtk: 68,
@@ -33,6 +37,8 @@ export const SPECIAL_BREEDS = [
     result: {
       id: "dragonraptor",
       name: "ドラゴンラプター",
+      type: "carnivore",
+      archetype: "dragon",
       size: "large",
       rarity: 4,
       baseAtk: 105,
@@ -47,6 +53,8 @@ export const SPECIAL_BREEDS = [
     result: {
       id: "tyrannospino",
       name: "ティラノスピノ",
+      type: "carnivore",
+      archetype: "theropod",
       size: "large",
       rarity: 4,
       baseAtk: 130,
@@ -61,6 +69,8 @@ export const SPECIAL_BREEDS = [
     result: {
       id: "gigabrachio",
       name: "ギガブラキオ",
+      type: "herbivore",
+      archetype: "sauropod",
       size: "giant",
       rarity: 5,
       baseAtk: 155,
@@ -75,6 +85,8 @@ export const SPECIAL_BREEDS = [
     result: {
       id: "chaosdragon",
       name: "カオスドラゴン",
+      type: "carnivore",
+      archetype: "dragon",
       size: "giant",
       rarity: 5,
       baseAtk: 190,
@@ -89,6 +101,8 @@ export const SPECIAL_BREEDS = [
     result: {
       id: "armored_allo",
       name: "アーマードアロ",
+      type: "herbivore",
+      archetype: "armored",
       size: "large",
       rarity: 5,
       baseAtk: 175,
@@ -103,6 +117,8 @@ export const SPECIAL_BREEDS = [
     result: {
       id: "fortress_titan",
       name: "フォートレスタイタン",
+      type: "herbivore",
+      archetype: "armored",
       size: "giant",
       rarity: 5,
       baseAtk: 210,
@@ -117,6 +133,8 @@ export const SPECIAL_BREEDS = [
     result: {
       id: "sky_overlord",
       name: "スカイオーバーロード",
+      type: "pterosaur",
+      archetype: "dragon",
       size: "giant",
       rarity: 5,
       baseAtk: 280,
@@ -131,12 +149,125 @@ export const SPECIAL_BREEDS = [
     result: {
       id: "genesis_dragon",
       name: "ジェネシスドラゴン",
+      type: "carnivore",
+      archetype: "dragon",
       size: "giant",
       rarity: 6,
       baseAtk: 350,
       baseHp: 980,
       baseSpd: 85
     }
-  }
+  },
 
+  // 11. 草食突撃ハイブリッド（パキケファロ × トリケラトプス）
+  {
+    parents: ["pachy", "triceratops"],
+    result: {
+      id: "ceratops_king",
+      name: "ケラトプスキング",
+      type: "herbivore",
+      archetype: "ceratopsian",
+      size: "large",
+      rarity: 4,
+      baseAtk: 135,
+      baseHp: 340,
+      baseSpd: 36
+    }
+  },
+
+  // 12. 翼竜ハイブリッド（プテラノドン × ケツァルコアトルス）
+  {
+    parents: ["pteranodon", "quetzal"],
+    result: {
+      id: "storm_wyvern",
+      name: "ストームワイバーン",
+      type: "pterosaur",
+      archetype: "pterosaur",
+      size: "giant",
+      rarity: 5,
+      baseAtk: 215,
+      baseHp: 490,
+      baseSpd: 82
+    }
+  },
+
+  // 13. 鋭爪の草食ハイブリッド（テリジノサウルス × アンキロサウルス）
+  {
+    parents: ["therizino", "ankylo"],
+    result: {
+      id: "scythe_titan",
+      name: "サイスタイタン",
+      type: "herbivore",
+      archetype: "armored",
+      size: "giant",
+      rarity: 5,
+      baseAtk: 245,
+      baseHp: 680,
+      baseSpd: 44
+    }
+  },
+
+  // 14. 高速肉食ハイブリッド（カルノタウルス × スピノサウルス）
+  {
+    parents: ["carno", "spino"],
+    result: {
+      id: "inferno_rex",
+      name: "インフェルノレックス",
+      type: "carnivore",
+      archetype: "theropod",
+      size: "giant",
+      rarity: 5,
+      baseAtk: 230,
+      baseHp: 470,
+      baseSpd: 68
+    }
+  },
+
+  // 15. 海生ハイブリッド第1段階（プレシオサウルス × モササウルス）
+  {
+    parents: ["plesio", "mosasaurus"],
+    result: {
+      id: "kronosaurus",
+      name: "クロノサウルス",
+      type: "marine",
+      archetype: "theropod",
+      size: "giant",
+      rarity: 5,
+      baseAtk: 185,
+      baseHp: 560,
+      baseSpd: 52
+    }
+  },
+
+  // 16. 海生ハイブリッド頂点（クロノサウルス × リヴァイアサン）
+  {
+    parents: ["kronosaurus", "leviathan"],
+    result: {
+      id: "abyss_leviathan",
+      name: "アビスリヴァイアサン",
+      type: "marine",
+      archetype: "dragon",
+      size: "giant",
+      rarity: 6,
+      baseAtk: 310,
+      baseHp: 890,
+      baseSpd: 76
+    }
+  },
+
+  // 17. 天空の翼竜頂点（ストームワイバーン × スカイオーバーロード）
+  {
+    parents: ["storm_wyvern", "sky_overlord"],
+    result: {
+      id: "tempest_dragon",
+      name: "テンペストドラゴン",
+      type: "pterosaur",
+      archetype: "dragon",
+      size: "giant",
+      rarity: 6,
+      baseAtk: 335,
+      baseHp: 860,
+      baseSpd: 95
+    }
+  }
 ];

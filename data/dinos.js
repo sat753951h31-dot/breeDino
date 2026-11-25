@@ -1,153 +1,25 @@
 export const DINO_SPECIES = [
-
-  {
-    id: "raptor",
-    name: "ラプトル",
-
-    size: "small",
-
-    huntLevel: 1,
-
-    baseAtk: 20,
-    baseHp: 50,
-    baseSpd: 25
-  },
-
-  {
-    id: "compy",
-    name: "コンプソグナトゥス",
-
-    size: "small",
-
-    huntLevel: 1,
-
-    baseAtk: 15,
-    baseHp: 35,
-    baseSpd: 35
-  },
-
-  {
-    id: "triceratops",
-    name: "トリケラトプス",
-
-    size: "normal",
-
-    huntLevel: 1,
-
-    baseAtk: 35,
-    baseHp: 90,
-    baseSpd: 15
-  },
-
-  {
-    id: "stego",
-    name: "ステゴサウルス",
-
-    size: "normal",
-
-    huntLevel: 1,
-
-    baseAtk: 40,
-    baseHp: 100,
-    baseSpd: 10
-  },
-
-  {
-    id: "trex",
-    name: "ティラノサウルス",
-
-    size: "large",
-
-    huntLevel: 10,
-
-    baseAtk: 80,
-    baseHp: 150,
-    baseSpd: 25
-  },
-
-  {
-    id: "spino",
-    name: "スピノサウルス",
-
-    size: "large",
-
-    huntLevel: 10,
-
-    baseAtk: 70,
-    baseHp: 140,
-    baseSpd: 35
-  },
-
-  {
-    id: "brachio",
-    name: "ブラキオサウルス",
-
-    size: "giant",
-
-    huntLevel: 20,
-
-    baseAtk: 60,
-    baseHp: 300,
-    baseSpd: 8
-  },
-
-  {
-    id: "giganoto",
-    name: "ギガノトサウルス",
-
-    size: "giant",
-
-    huntLevel: 20,
-
-    baseAtk: 100,
-    baseHp: 200,
-    baseSpd: 20
-  },
-
-  // --- 既存のギガノトサウルスの後に追加 ---
-
-  {
-    id: "ankylo",
-    name: "アンキロサウルス",
-    size: "normal",
-    huntLevel: 30,
-    baseAtk: 95,
-    baseHp: 380,
-    baseSpd: 18
-  },
-
-  {
-    id: "allo",
-    name: "アロサウルス",
-    size: "large",
-    huntLevel: 30,
-    baseAtk: 130,
-    baseHp: 280,
-    baseSpd: 45
-  },
-
-  {
-    id: "quetzal",
-    name: "ケツァルコアトルス",
-    size: "giant",
-    huntLevel: 40,
-    baseAtk: 175,
-    baseHp: 460,
-    baseSpd: 60
-  },
-
-  {
-    id: "omega_rex",
-    name: "オメガレックス",
-    size: "giant",
-    huntLevel: 40,
-    baseAtk: 230,
-    baseHp: 600,
-    baseSpd: 50
-  },
-  { id: "pteranodon", name: "プテラノドン", size: "normal", rarity: 2, huntLevel: 3, baseAtk: 26, baseHp: 85, baseSpd: 36 },
-  { id: "plesio", name: "プレシオサウルス", size: "large", rarity: 3, huntLevel: 6, baseAtk: 42, baseHp: 180, baseSpd: 30 },
-  { id: "mosasaurus", name: "モササウルス", size: "giant", rarity: 4, huntLevel: 6, baseAtk: 58, baseHp: 240, baseSpd: 34 },
-  { id: "leviathan", name: "リヴァイアサン", size: "giant", rarity: 4, huntLevel: 6, baseAtk: 68, baseHp: 280, baseSpd: 38 },
-
+  { id: "raptor", name: "ラプトル", type: "carnivore", size: "small", huntLevel: 1, baseAtk: 20, baseHp: 50, baseSpd: 25 },
+  { id: "compy", name: "コンプソグナトゥス", type: "carnivore", size: "small", huntLevel: 1, baseAtk: 15, baseHp: 35, baseSpd: 35 },
+  { id: "triceratops", name: "トリケラトプス", type: "herbivore", size: "normal", huntLevel: 1, baseAtk: 35, baseHp: 90, baseSpd: 15 },
+  { id: "stego", name: "ステゴサウルス", type: "herbivore", size: "normal", huntLevel: 1, baseAtk: 40, baseHp: 100, baseSpd: 10 },
+  { id: "trex", name: "ティラノサウルス", type: "carnivore", size: "large", huntLevel: 10, baseAtk: 80, baseHp: 150, baseSpd: 25 },
+  { id: "spino", name: "スピノサウルス", type: "carnivore", size: "large", huntLevel: 10, baseAtk: 70, baseHp: 140, baseSpd: 35 },
+  { id: "brachio", name: "ブラキオサウルス", type: "herbivore", size: "giant", huntLevel: 20, baseAtk: 60, baseHp: 300, baseSpd: 8 },
+  { id: "giganoto", name: "ギガノトサウルス", type: "carnivore", size: "giant", huntLevel: 20, baseAtk: 100, baseHp: 200, baseSpd: 20 },
+  { id: "ankylo", name: "アンキロサウルス", type: "herbivore", size: "normal", huntLevel: 30, baseAtk: 95, baseHp: 380, baseSpd: 18 },
+  { id: "allo", name: "アロサウルス", type: "carnivore", size: "large", huntLevel: 30, baseAtk: 130, baseHp: 280, baseSpd: 45 },
+  { id: "quetzal", name: "ケツァルコアトルス", type: "pterosaur", size: "giant", huntLevel: 40, baseAtk: 175, baseHp: 460, baseSpd: 60 },
+  { id: "omega_rex", name: "オメガレックス", type: "carnivore", size: "giant", huntLevel: 40, baseAtk: 230, baseHp: 600, baseSpd: 50 },
+  { id: "pteranodon", name: "プテラノドン", type: "pterosaur", size: "normal", rarity: 2, huntLevel: 3, baseAtk: 26, baseHp: 85, baseSpd: 36 },
+  { id: "plesio", name: "プレシオサウルス", type: "marine", size: "large", rarity: 3, huntLevel: 6, baseAtk: 42, baseHp: 180, baseSpd: 30 },
+  { id: "mosasaurus", name: "モササウルス", type: "marine", size: "giant", rarity: 4, huntLevel: 6, baseAtk: 58, baseHp: 240, baseSpd: 34 },
+  { id: "leviathan", name: "リヴァイアサン", type: "marine", size: "giant", rarity: 4, huntLevel: 6, baseAtk: 68, baseHp: 280, baseSpd: 38 },
+  { id: "dimorphodon", name: "ディモルフォドン", type: "pterosaur", size: "small", huntLevel: 10, baseAtk: 48, baseHp: 110, baseSpd: 55 },
+  { id: "tapejara", name: "タペヤラ", type: "pterosaur", size: "normal", huntLevel: 20, baseAtk: 88, baseHp: 210, baseSpd: 62 },
+  { id: "pachy", name: "パキケファロサウルス", type: "herbivore", size: "normal", huntLevel: 10, baseAtk: 75, baseHp: 165, baseSpd: 32 },
+  { id: "therizino", name: "テリジノサウルス", type: "herbivore", size: "large", huntLevel: 30, baseAtk: 155, baseHp: 310, baseSpd: 40 },
+  { id: "carno", name: "カルノタウルス", type: "carnivore", size: "large", huntLevel: 20, baseAtk: 115, baseHp: 210, baseSpd: 54 },
+  { id: "ichthyo", name: "イクチオサウルス", type: "marine", size: "normal", huntLevel: 6, baseAtk: 46, baseHp: 150, baseSpd: 48 },
+  { id: "dunkle", name: "ダンクルオステウス", type: "marine", size: "large", huntLevel: 6, baseAtk: 64, baseHp: 230, baseSpd: 26 }
 ];

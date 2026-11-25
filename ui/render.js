@@ -382,6 +382,7 @@ function renderDinoList(game, state, handlers) {
   }
 
   // 1. 名前・種族・性別・タイプで絞り込み
+  // 1. 名前・種族・性別・タイプ・レア度・世代で絞り込み
   let list = game.dinos.filter(dino => {
     if (keyword !== "") {
       const currentName = (dino.name ?? "").toLowerCase();
@@ -401,6 +402,22 @@ function renderDinoList(game, state, handlers) {
       if (dinoType.id !== state.filterType) {
         return false;
       }
+    }
+    if (state.filterRarity && state.filterRarity !== "all") {
+      if ((dino.rarityType ?? "white") !== state.filterRarity) {
+        return false;
+      }
+    }
+    if (state.filterGen && state.filterGen !== "all") {
+      const gen = dino.generation ?? 0;
+      if (state.filterGen === "0" && gen !== 0) return false;
+      if (state.filterGen === "1_plus" && gen < 1) return false;
+      if (state.filterGen === "2_plus" && gen < 2) return false;
+      if (state.filterGen === "5_plus" && gen < 5) return false;
+    }
+    if (state.filterLock && state.filterLock !== "all") {
+      if (state.filterLock === "locked" && !dino.locked) return false;
+      if (state.filterLock === "unlocked" && dino.locked) return false;
     }
     return true;
   });

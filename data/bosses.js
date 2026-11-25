@@ -3,6 +3,8 @@ export const AREA_BOSSES = [
     areaLevel: 1,
     id: "boss_1",
     name: "【覇王】キングラプトル",
+    type: "carnivore",
+    archetype: "theropod",
     size: "normal",
     huntLevel: 15,
     baseAtk: 55,
@@ -25,6 +27,8 @@ export const AREA_BOSSES = [
     areaLevel: 2,
     id: "boss_2",
     name: "【密林の主】エンシェントレックス",
+    type: "carnivore",
+    archetype: "theropod",
     size: "large",
     huntLevel: 25,
     baseAtk: 135,
@@ -47,6 +51,8 @@ export const AREA_BOSSES = [
     areaLevel: 3,
     id: "boss_3",
     name: "【溶岩巨獣】マグマギガノト",
+    type: "carnivore",
+    archetype: "theropod",
     size: "giant",
     huntLevel: 35,
     baseAtk: 230,
@@ -69,6 +75,8 @@ export const AREA_BOSSES = [
     areaLevel: 4,
     id: "boss_4",
     name: "【魔境の化身】アビスドラゴン",
+    type: "carnivore",
+    archetype: "dragon",
     size: "giant",
     huntLevel: 50,
     baseAtk: 360,
@@ -91,6 +99,8 @@ export const AREA_BOSSES = [
     areaLevel: 5,
     id: "boss_5",
     name: "【創世竜神】バハムート・オメガ",
+    type: "carnivore",
+    archetype: "dragon",
     size: "giant",
     huntLevel: 70,
     baseAtk: 550,
@@ -110,25 +120,27 @@ export const AREA_BOSSES = [
     }
   },
   {
-    id: "boss_6",
     areaLevel: 6,
-    name: "深海竜王オケアノス",
+    id: "boss_6",
+    name: "【深淵の海皇】深海竜王オケアノス",
+    type: "marine",
+    archetype: "dragon",
     size: "giant",
-    huntLevel: 6,
-    baseAtk: 135,
-    baseHp: 1200,
-    baseSpd: 55,
-    expReward: 600,
+    huntLevel: 85,
+    baseAtk: 680,
+    baseHp: 4200,
+    baseSpd: 95,
+    expReward: 3500,
     firstReward: {
       egg: { size: "giant", rarity: "rainbow" },
-      crystals: 10,
-      premiumMeat: 8,
-      text: "🌈 虹卵（巨大）＋ 💎 生命の結晶×10 ＋ ✨ 極上肉×8"
+      crystals: 12,
+      premiumMeat: 20,
+      text: "🌈 虹卵（巨大）＋ 💎 生命の結晶×12 ＋ ✨ 極上肉×20"
     },
     repeatReward: {
-      crystals: 4,
-      premiumMeat: 4,
-      text: "💎 生命の結晶×4 ＋ ✨ 極上肉×4"
+      crystals: 6,
+      premiumMeat: 6,
+      text: "💎 生命の結晶×6 ＋ ✨ 極上肉×6"
     }
   }
 ];

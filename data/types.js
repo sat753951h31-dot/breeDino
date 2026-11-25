@@ -1,3 +1,7 @@
+import { DINO_SPECIES } from "./dinos.js";
+import { SPECIAL_BREEDS } from "./specialBreeding.js";
+import { AREA_BOSSES } from "./bosses.js";
+
 export const DINO_TYPES = {
   carnivore: { id: "carnivore", icon: "🍖", name: "肉食", desc: "草食に強く、翼竜に弱い" },
   herbivore: { id: "herbivore", icon: "🌿", name: "草食", desc: "翼竜に強く、肉食に弱い" },
@@ -5,65 +9,15 @@ export const DINO_TYPES = {
   marine:    { id: "marine",    icon: "🌊", name: "海生", desc: "海エリアで非常に強く、陸エリアでは弱い" }
 };
 
-// 種族IDごとのタイプマッピング
-const SPECIES_TYPE_MAP = {
-  // 🍖 肉食
-  compy: "carnivore",
-  raptor: "carnivore",
-  shadowraptor: "carnivore",
-  trex: "carnivore",
-  spino: "carnivore",
-  giganoto: "carnivore",
-  allo: "carnivore",
-  omega_rex: "carnivore",
-  tyrannospino: "carnivore",
-  dragonraptor: "carnivore",
-  chaosdragon: "carnivore",
-  genesis_dragon: "carnivore",
-  boss_1: "carnivore",
-  boss_2: "carnivore",
-  boss_3: "carnivore",
-  boss_4: "carnivore",
-  boss_5: "carnivore",
-
-  // 🌿 草食
-  brachio: "herbivore",
-  gigabrachio: "herbivore",
-  triceratops: "herbivore",
-  aegistops: "herbivore",
-  stego: "herbivore",
-  ankylo: "herbivore",
-  armored_allo: "herbivore",
-  fortress_titan: "herbivore",
-
-  // 🦅 翼竜
-  quetzal: "pterosaur",
-  pteranodon: "pterosaur",
-  sky_overlord: "pterosaur",
-
-  // 🌊 海生爬虫類
-  plesio: "marine",
-  mosasaurus: "marine",
-  leviathan: "marine",
-  boss_sea: "marine"
-};
-
-// IDや名前からタイプデータを取得
 export function getDinoType(speciesId = "", name = "") {
-  if (SPECIES_TYPE_MAP[speciesId]) {
-    return DINO_TYPES[SPECIES_TYPE_MAP[speciesId]];
-  }
+  const normal = DINO_SPECIES.find(d => d.id === speciesId);
+  if (normal?.type && DINO_TYPES[normal.type]) return DINO_TYPES[normal.type];
 
-  const key = `${speciesId} ${name}`.toLowerCase();
-  if (key.includes("mosa") || key.includes("plesio") || key.includes("sea") || key.includes("モサ") || key.includes("プレシオ") || key.includes("海") || key.includes("リヴァイアサン")) {
-    return DINO_TYPES.marine;
-  }
-  if (key.includes("ptera") || key.includes("quetzal") || key.includes("sky") || key.includes("プテラ") || key.includes("ケツァル") || key.includes("翼")) {
-    return DINO_TYPES.pterosaur;
-  }
-  if (key.includes("brachio") || key.includes("tricera") || key.includes("stego") || key.includes("ankylo") || key.includes("ブラキオ") || key.includes("トリケラ") || key.includes("ステゴ") || key.includes("アンキロ")) {
-    return DINO_TYPES.herbivore;
-  }
+  const special = SPECIAL_BREEDS.find(b => b.result.id === speciesId);
+  if (special?.result?.type && DINO_TYPES[special.result.type]) return DINO_TYPES[special.result.type];
+
+  const boss = AREA_BOSSES.find(b => b.id === speciesId);
+  if (boss?.type && DINO_TYPES[boss.type]) return DINO_TYPES[boss.type];
 
   return DINO_TYPES.carnivore;
 }

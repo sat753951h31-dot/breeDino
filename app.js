@@ -40,6 +40,9 @@ let filterName = "";
 let filterSpecies = "all";
 let filterSex = "all";
 let filterType = "all";
+let filterRarity = "all";
+let filterGen = "all";
+let filterLock = "all";
 let sortBy = "default";
 let lastActionTime = 0;
 let tickCounter = 0;
@@ -1700,7 +1703,18 @@ function update() {
   checkAchievements();
   renderGame(
     game,
-    { selectedMale, selectedFemale, filterName, filterSpecies, filterSex, filterType, sortBy, isAutoExploring },
+    {
+      selectedMale,
+      selectedFemale,
+      filterName,
+      filterSpecies,
+      filterSex,
+      filterType,
+      filterRarity,
+      filterGen,
+      sortBy,
+      isAutoExploring
+    },
     handlers
   );
   saveGame(game);
@@ -1747,6 +1761,21 @@ document.getElementById("filterSex")?.addEventListener("change", (e) => {
   update();
 });
 
+document.getElementById("filterRarity")?.addEventListener("change", (e) => {
+  filterRarity = e.target.value;
+  update();
+});
+
+document.getElementById("filterGen")?.addEventListener("change", (e) => {
+  filterGen = e.target.value;
+  update();
+});
+
+document.getElementById("filterLock")?.addEventListener("change", (e) => {
+  filterLock = e.target.value;
+  update();
+});
+
 document.getElementById("sortBy")?.addEventListener("change", (e) => {
   sortBy = e.target.value;
   update();
@@ -1757,6 +1786,9 @@ document.getElementById("resetFilterBtn")?.addEventListener("click", () => {
   filterSpecies = "all";
   filterSex = "all";
   filterType = "all";
+  filterRarity = "all";
+  filterGen = "all";
+  filterLock = "all";
   sortBy = "default";
 
   // 画面上の入力欄・セレクトボックスの見た目も初期値に戻す
@@ -1764,12 +1796,18 @@ document.getElementById("resetFilterBtn")?.addEventListener("click", () => {
   const speciesSelect = document.getElementById("filterSpecies");
   const sexSelect = document.getElementById("filterSex");
   const typeSelect = document.getElementById("filterType");
+  const raritySelect = document.getElementById("filterRarity");
+  const genSelect = document.getElementById("filterGen");
+  const lockSelect = document.getElementById("filterLock");
   const sortSelect = document.getElementById("sortBy");
 
   if (nameInput) nameInput.value = "";
   if (speciesSelect) speciesSelect.value = "all";
   if (sexSelect) sexSelect.value = "all";
   if (typeSelect) typeSelect.value = "all";
+  if (raritySelect) raritySelect.value = "all";
+  if (genSelect) genSelect.value = "all";
+  if (lockSelect) lockSelect.value = "all";
   if (sortSelect) sortSelect.value = "default";
 
   update();
