@@ -1557,9 +1557,17 @@ function getGachaMaxGeneration() {
   return Math.max(5, highestOwned, recordMax);
 }
 
+function getPremiumGachaGenRange() {
+  const loop = Math.max(3, game.worldLoop ?? 1);
+  const minGen = loop;
+  const highestOwned = game.dinos.reduce((max, d) => Math.max(max, d.generation ?? 0), 0);
+  const recordMax = game.stats?.maxGeneration ?? 0;
+  const maxGen = Math.max(loop + 2, highestOwned, recordMax);
+  return { minGen, maxGen };
+}
+
 // ガチャから1体の恐竜を生成するヘルパー
-function rollGachaDino() {
-  // 図鑑解放済みの種族プールを作成（通常種＋発見済みの特殊交配種）
+function rollGachaDino(isPremium = false) {
   const discoveredSet = new Set(game.discoveredSpecies ?? []);
   const normalPool = DINO_SPECIES.filter(d => discoveredSet.has(d.id));
   const specialPool = SPECIAL_BREEDS
@@ -1568,42 +1576,57 @@ function rollGachaDino() {
 
   let pool = [...normalPool, ...specialPool];
   if (pool.length === 0) {
-    pool = [DINO_SPECIES];
+    pool = [DINO_SPECIES.at(0)];
   }
 
   const base = pool[Math.floor(Math.random() * pool.length)];
 
-  // レア度抽選（白45% / 青30% / 紫18% / 虹7%）
+  // レア度抽選
   const rRoll = Math.random();
-  const rarityType =
-    rRoll < 0.07 ? "rainbow" :
-    rRoll < 0.25 ? "purple" :
-    rRoll < 0.55 ? "blue" : "white";
+  let rarityType = "white";
+  if (isPremium) {
+    // 高級ガチャ：白なし（虹25% / 紫40% / 青35%）
+    rarityType =
+      rRoll < 0.25 ? "rainbow" :
+      rRoll < 0.65 ? "purple" : "blue";
+  } else {
+    // 通常ガチャ（虹7% / 紫18% / 青30% / 白45%）
+    rarityType =
+      rRoll < 0.07 ? "rainbow" :
+      rRoll < 0.25 ? "purple" :
+      rRoll < 0.55 ? "blue" : "white";
+  }
 
-  // 体格抽選
-  const sizes = ["small", "normal", "large", "giant"];
+  // 体格抽選（高級ガチャは小型が出ない）
+  const sizes = isPremium ? ["normal", "large", "giant"] : ["small", "normal", "large", "giant"];
   const size = sizes[Math.floor(Math.random() * sizes.length)];
 
-  // 体色抽選（通常72% / 青12% / 金10% / 虹6%）
+  // 体色抽選（高級ガチャは希少体色45%）
   const cRoll = Math.random();
-  const color =
-    cRoll < 0.06 ? "rainbow" :
-    cRoll < 0.16 ? "gold" :
-    cRoll < 0.28 ? "blue" : "normal";
+  const color = isPremium
+    ? (cRoll < 0.12 ? "rainbow" : cRoll < 0.28 ? "gold" : cRoll < 0.45 ? "blue" : "normal")
+    : (cRoll < 0.06 ? "rainbow" : cRoll < 0.16 ? "gold" : cRoll < 0.28 ? "blue" : "normal");
 
-  // 突然変異（12%）
-  const mutant = Math.random() < 0.12;
+  // 突然変異（高級ガチャは25%、通常は12%）
+  const mutant = Math.random() < (isPremium ? 0.25 : 0.12);
 
-  // 特性を全特性からランダム抽選
+  // 特性抽選
   const rawTraits = traitModule.TRAITS ?? traitModule.default ?? {};
   const traitList = Array.isArray(rawTraits) ? rawTraits : Object.values(rawTraits);
   const pickedTrait = traitList.length > 0
     ? traitList[Math.floor(Math.random() * traitList.length)].id
     : "brave";
 
-  // 世代（F0 〜 maxGen）とレベル上限ボーナスをランダム決定
-  const maxGen = getGachaMaxGeneration();
-  const generation = Math.floor(Math.random() * (maxGen + 1));
+  // 世代とレベル上限ボーナスを決定
+  let generation = 0;
+  if (isPremium) {
+    const { minGen, maxGen } = getPremiumGachaGenRange();
+    generation = minGen + Math.floor(Math.random() * (maxGen - minGen + 1));
+  } else {
+    const maxGen = getGachaMaxGeneration();
+    generation = Math.floor(Math.random() * (maxGen + 1));
+  }
+
   const genBaseMax = 20 + generation * 5;
   const maxAllowedBonus = generation * 10;
   const randomBonus = Math.floor(Math.random() * (maxAllowedBonus + 1));
@@ -1612,6 +1635,10 @@ function rollGachaDino() {
   const uid = (typeof crypto !== "undefined" && crypto.randomUUID)
     ? crypto.randomUUID()
     : `gacha-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+  // 高級ガチャは最低個体値40保証
+  const minIv = isPremium ? 40 : 0;
+  const rollIv = () => minIv + Math.floor(Math.random() * (101 - minIv));
 
   const dino = {
     uid,
@@ -1630,9 +1657,9 @@ function rollGachaDino() {
     baseAtk: base.baseAtk,
     baseHp: base.baseHp,
     baseSpd: base.baseSpd,
-    atkIv: Math.floor(Math.random() * 101),
-    hpIv: Math.floor(Math.random() * 101),
-    spdIv: Math.floor(Math.random() * 101),
+    atkIv: rollIv(),
+    hpIv: rollIv(),
+    spdIv: rollIv(),
     currentHp: 1,
     locked: false
   };
@@ -1643,10 +1670,16 @@ function rollGachaDino() {
 }
 
 // 🎰 ガチャ実行処理（1回 or 10回）
-function handleRollGacha(times = 1) {
+function handleRollGacha(times = 1, isPremium = false) {
   if (!canAct()) return;
 
-  const cost = times * 10;
+  if (isPremium && (game.worldLoop ?? 1) < 3) {
+    alert("👑 高級ガチャは「3周目」に到達すると解放されます！");
+    return;
+  }
+
+  const unitCost = isPremium ? 100 : 10;
+  const cost = times * unitCost;
   const ownedCrystals = game.items?.breedCrystal ?? 0;
 
   if (ownedCrystals < cost) {
@@ -1659,7 +1692,7 @@ function handleRollGacha(times = 1) {
 
   const results = [];
   for (let i = 0; i < times; i++) {
-    const dino = rollGachaDino();
+    const dino = rollGachaDino(isPremium);
     game.dinos.push(dino);
     if (!game.activeDinoId) game.activeDinoId = dino.uid;
 
@@ -1671,17 +1704,17 @@ function handleRollGacha(times = 1) {
   }
 
   lastGachaResults = results;
+  const label = isPremium ? "👑 高級ガチャ" : "🎰 ガチャ卵";
 
   if (times === 1) {
-    const d = results;
+    const d = results.at(0);
     const trait = getTraitData(d.trait);
-    const sexLabel = d.sex === "male" ? "♂️ オス" : "♀️ メス";
-    addLog(`🎰 【ガチャ卵】「${d.name}（F${d.generation} / ${getRarityLabel(d.rarityType)} / ${trait.icon}${trait.name}）」を召喚した！`);
+    addLog(`${label}から「${d.name}（F${d.generation} / ${getRarityLabel(d.rarityType)} / ${trait.icon}${trait.name}）」を召喚した！`);
   } else {
     const rainbowCount = results.filter(d => d.rarityType === "rainbow").length;
     const purpleCount = results.filter(d => d.rarityType === "purple").length;
     const mutantCount = results.filter(d => d.mutant).length;
-    addLog(`🎰 【10連ガチャ卵】10体を召喚！（🌈虹:${rainbowCount} / 🟣紫:${purpleCount} / 🧬変異:${mutantCount}）`);
+    addLog(`${label}【10連】10体を召喚！（🌈虹:${rainbowCount} / 🟣紫:${purpleCount} / 🧬変異:${mutantCount}）`);
   }
 
   update();
@@ -1780,7 +1813,7 @@ const handlers = {
   onAutoSelectExpMembers: handleAutoSelectExpMembers,
   onUpgradeMonument: handleUpgradeMonument,
   onCraftItem: handleCraftItem,
-  onRollGacha: handleRollGacha,
+  onRollGacha: (times, isPremium = false) => handleRollGacha(times, isPremium),
   onUseTraitFruit: (dinoId) => handleUseTraitFruit(dinoId ?? game.activeDinoId),
   onUseIvElixir: (dinoId) => handleUseIvElixir(dinoId ?? game.activeDinoId),
   onSetActive: (dinoId) => {
@@ -2032,7 +2065,8 @@ function update() {
       sortBy,
       isAutoExploring,
       lastGachaResults,
-      gachaMaxGen: getGachaMaxGeneration()
+      gachaMaxGen: getGachaMaxGeneration(),
+      premiumGachaRange: getPremiumGachaGenRange()
     },
     handlers
   );

@@ -1619,7 +1619,12 @@ function renderGachaTab(game, state, handlers) {
   const maxGen = state?.gachaMaxGen ?? 5;
   const discoveredCount = (game.discoveredSpecies ?? []).length;
 
+  const currentLoop = game.worldLoop ?? 1;
+  const isPremiumUnlocked = currentLoop >= 3;
+  const pRange = state?.premiumGachaRange ?? { minGen: 3, maxGen: 5 };
+
   stageEl.innerHTML = `
+    <!-- 通常ガチャ枠 -->
     <div class="gacha-box">
       <div class="gacha-status-row">
         <div class="gacha-crystal-pill">💎 所持結晶：<strong>${crystals}</strong> 個</div>
@@ -1627,7 +1632,7 @@ function renderGachaTab(game, state, handlers) {
       </div>
 
       <div class="gacha-rates-info">
-        <span>排出率：⚪ 白 45% ／ 🔵 青 30% ／ 🟣 紫 18% ／ 🌈 虹 7%（🧬 突然変異 12%・希少体色 28%）</span>
+        <span>【通常ガチャ】⚪ 白 45% ／ 🔵 青 30% ／ 🟣 紫 18% ／ 🌈 虹 7%（🧬 突然変異 12%・希少体色 28%）</span>
       </div>
 
       <div class="gacha-btn-group">
@@ -1639,10 +1644,38 @@ function renderGachaTab(game, state, handlers) {
         </button>
       </div>
     </div>
+
+    <!-- 👑 高級ガチャ枠（3周目以降で解放） -->
+    <div class="gacha-box is-premium ${!isPremiumUnlocked ? "is-locked" : ""}">
+      <div class="gacha-status-row">
+        <div class="gacha-premium-title">👑 高級ガチャ（ハイグレード召喚）</div>
+        <div class="gacha-spec-pill">
+          ${isPremiumUnlocked
+            ? `🧬 出現世代保証：<strong>F${pRange.minGen} 〜 F${pRange.maxGen}</strong>`
+            : `🔒 <strong>3周目到達で解放</strong>（現在 ${currentLoop}周目）`
+          }
+        </div>
+      </div>
+
+      <div class="gacha-rates-info">
+        <span>【高級ガチャ】<strong>⚪白なし・レベル上限MAX確定！</strong> 🔵 青 35% ／ 🟣 紫 40% ／ 🌈 虹 25%（🧬 突然変異 25%・IV40以上保証）</span>
+      </div>
+
+      <div class="gacha-btn-group">
+        <button id="premiumGacha1Btn" class="btn-gacha-premium-single" ${!isPremiumUnlocked || crystals < 100 ? "disabled" : ""}>
+          ${isPremiumUnlocked ? "👑 高級1回まわす<br><small>💎 生命の結晶 ×100</small>" : "🔒 3周目で解放<br><small>💎 結晶 ×100</small>"}
+        </button>
+        <button id="premiumGacha10Btn" class="btn-gacha-premium-multi" ${!isPremiumUnlocked || crystals < 1000 ? "disabled" : ""}>
+          ${isPremiumUnlocked ? "🌟 高級10回まわす<br><small>💎 生命の結晶 ×1,000</small>" : "🔒 3周目で解放<br><small>💎 結晶 ×1,000</small>"}
+        </button>
+      </div>
+    </div>
   `;
 
-  document.getElementById("gacha1Btn").onclick = () => handlers.onRollGacha(1);
-  document.getElementById("gacha10Btn").onclick = () => handlers.onRollGacha(10);
+  document.getElementById("gacha1Btn").onclick = () => handlers.onRollGacha(1, false);
+  document.getElementById("gacha10Btn").onclick = () => handlers.onRollGacha(10, false);
+  document.getElementById("premiumGacha1Btn").onclick = () => handlers.onRollGacha(1, true);
+  document.getElementById("premiumGacha10Btn").onclick = () => handlers.onRollGacha(10, true);
 
   // 直近のガチャ結果表示
   const results = state?.lastGachaResults ?? [];
