@@ -3606,6 +3606,62 @@ button{
 }
 
 /* =========================================
+   スマホ用：遠征「新規チームの編成」カードの表示改善
+========================================= */
+@media (max-width: 768px) {
+  .exp-builder-box {
+    padding: 12px;
+  }
+
+  /* タイトルと空き部隊枠を縦に1行ずつ綺麗に並べる */
+  .exp-builder-top {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px;
+  }
+
+  .exp-builder-top strong {
+    font-size: 0.95em;
+    white-space: nowrap;
+  }
+
+  .exp-builder-top > span {
+    display: inline-block;
+    padding: 2px 10px;
+    font-size: 0.84em;
+    background-color: #ffffff;
+    border: 1px solid #90caf9;
+    border-radius: 999px;
+    color: #1565c0;
+    white-space: nowrap;
+  }
+
+  /* 幸運ボーナスの説明とバッジも押し合わないよう整列 */
+  .exp-luck-info {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px;
+    font-size: 0.82em;
+  }
+
+  .exp-luck-badge {
+    align-self: flex-start;
+  }
+
+  /* 遠征先プルダウンも横幅いっぱいに広げる */
+  .exp-setup-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px;
+  }
+
+  .exp-setup-row select {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* =========================================
    ミュータント個体のオーラ演出（顔被り解消）
 ========================================= */
 @keyframes mutantAuraPulse {
