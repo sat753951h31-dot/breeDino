@@ -443,6 +443,50 @@ function renderDinoList(game, state, handlers) {
   if (!el) return;
   el.innerHTML = "";
 
+  // 💎 虹レア結晶還元バーの描画
+  const rainbowBar = document.getElementById("rainbowConvertBar");
+  if (rainbowBar) {
+    const isMode = Boolean(state.isRainbowSelectMode);
+    const pickedSet = state.selectedRainbowIds ?? new Set();
+    const calcReturn = state.getRainbowCrystalReturn ?? ((d) => 5 + Math.min(10, d.generation ?? 0));
+
+    const pickedDinos = game.dinos.filter(d => pickedSet.has(d.uid));
+    const totalGain = pickedDinos.reduce((sum, d) => sum + calcReturn(d), 0);
+
+    if (!isMode) {
+      rainbowBar.innerHTML = `
+        <div class="rainbow-bar-row">
+          <span>🌈 <strong>余った虹レアの結晶還元：</strong>個別に選んで「💎 生命の結晶」に変換できます</span>
+          <button id="toggleRainbowModeBtn" class="btn-rainbow-mode">💎 虹レアを選んで還元する</button>
+        </div>
+      `;
+    } else {
+      rainbowBar.innerHTML = `
+        <div class="rainbow-bar-row is-active">
+          <div>
+            <strong>💎 還元モード選択中：${pickedDinos.length}体 選択（獲得予定：💎 ${totalGain}個）</strong><br>
+            <small>※育成中・遠征中・交配中・🔒ロック・🧬変異・✨希少体色は自動で保護されます</small>
+          </div>
+          <div class="rainbow-bar-actions">
+            <button id="execRainbowConvertBtn" class="btn-rainbow-exec" ${pickedDinos.length === 0 ? "disabled" : ""}>
+              ✨ 結晶 ${totalGain}個 に還元
+            </button>
+            <button id="cancelRainbowModeBtn" class="btn-rainbow-cancel">✕ 終了</button>
+          </div>
+        </div>
+      `;
+    }
+
+    const startBtn = document.getElementById("toggleRainbowModeBtn");
+    if (startBtn) startBtn.onclick = handlers.onToggleRainbowMode;
+
+    const execBtn = document.getElementById("execRainbowConvertBtn");
+    if (execBtn) execBtn.onclick = handlers.onExecuteRainbowConvert;
+
+    const cancelBtn = document.getElementById("cancelRainbowModeBtn");
+    if (cancelBtn) cancelBtn.onclick = handlers.onToggleRainbowMode;
+  }
+
   const speciesSelect = document.getElementById("filterSpecies");
   const keyword = (state.filterName ?? "").trim().toLowerCase();
   
@@ -568,6 +612,19 @@ function renderDinoList(game, state, handlers) {
     if (dino.color && dino.color !== "normal") card.classList.add(`color-${dino.color}`);
     if (dino.mutant) card.classList.add("is-mutant");
 
+    const isRainbowTarget =
+      (dino.rarityType ?? "white") === "rainbow" &&
+      !isActive &&
+      !isOnExpedition &&
+      !isSelected &&
+      !dino.locked &&
+      !dino.mutant &&
+      (!dino.color || dino.color === "normal");
+
+    const isRainbowPicked = Boolean(state.isRainbowSelectMode && state.selectedRainbowIds?.has(dino.uid));
+    if (isRainbowPicked) card.classList.add("is-rainbow-picked");
+    const crystalGain = (state.getRainbowCrystalReturn ?? ((d) => 5 + Math.min(10, d.generation ?? 0)))(dino);
+
     card.innerHTML = `
       <!-- 上部バッジ＆レベル -->
       <div class="card-top-row">
@@ -679,16 +736,23 @@ function renderDinoList(game, state, handlers) {
         </button>
       </div>
 
-      <!-- 最下段（どのカードも同じ高さになるよう統一） -->
-      ${isActive
-        ? `<div class="active-protect-label">⭐ 現在の育成パートナー</div>`
-        : isOnExpedition
-          ? `<div class="expedition-protect-label">🏕️ 遠征隊として派遣中${dino.locked ? " (🔒)" : ""}</div>`
-          : dino.locked
-            ? `<div class="locked-label">🔒 保護ロック中</div>`
-            : `<button class="release-btn" data-id="${dino.uid}">👋 お別れする</button>`
+      <!-- 最下段 -->
+      ${state.isRainbowSelectMode
+        ? (isRainbowTarget
+            ? `<button class="btn-rainbow-pick ${isRainbowPicked ? "is-picked" : ""}" data-id="${dino.uid}">
+                 ${isRainbowPicked ? `✅ 還元対象に選択中（💎+${crystalGain}）` : `💎 還元に選ぶ（💎+${crystalGain}）`}
+               </button>`
+            : `<div class="locked-label">${(dino.rarityType ?? "white") === "rainbow" ? "🛡️ 保護対象のため選択不可" : "⚪〜🟣 虹レア以外は対象外"}</div>`
+          )
+        : (isActive
+            ? `<div class="active-protect-label">⭐ 現在の育成パートナー</div>`
+            : isOnExpedition
+              ? `<div class="expedition-protect-label">🏕️ 遠征隊として派遣中${dino.locked ? " (🔒)" : ""}</div>`
+              : dino.locked
+                ? `<div class="locked-label">🔒 保護ロック中</div>`
+                : `<button class="release-btn" data-id="${dino.uid}">👋 お別れする</button>`
+          )
       }
-
     `;
     el.appendChild(card);
   });
@@ -716,6 +780,9 @@ function renderDinoList(game, state, handlers) {
   });
   el.querySelectorAll(".use-elixir-card-btn").forEach(btn => {
     btn.onclick = () => handlers.onUseIvElixir(btn.dataset.id);
+  });
+  el.querySelectorAll(".btn-rainbow-pick").forEach(btn => {
+    btn.onclick = () => handlers.onToggleRainbowPick(btn.dataset.id);
   });
 }
 

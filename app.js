@@ -54,6 +54,8 @@ let lastActionTime = 0;
 let tickCounter = 0;
 let isAutoExploring = false;
 let lastGachaResults = [];
+let isRainbowSelectMode = false;
+let selectedRainbowIds = new Set();
 
 function discoverSpecies(dino) {
   if (!game.discoveredSpecies.includes(dino.speciesId)) {
@@ -879,6 +881,86 @@ function handleBulkRelease() {
   if (premiumGain > 0) gainTexts.push(`✨ 極上肉×${premiumGain}`);
 
   addLog(`👋 【一括お別れ】${targets.length} 体の恐竜とお別れし、${gainTexts.join("・")} を手に入れた！`);
+  update();
+}
+
+// 虹レア1体あたりの結晶還元数を計算（基本5個 ＋ 世代数、最大15個）
+function getRainbowCrystalReturn(dino) {
+  const gen = dino.generation ?? 0;
+  return 5 + Math.min(10, gen);
+}
+
+// 虹レア個別選択モードの切り替え
+function handleToggleRainbowMode() {
+  isRainbowSelectMode = !isRainbowSelectMode;
+  selectedRainbowIds.clear();
+  update();
+}
+
+// 虹レア個体の選択トグル
+function handleToggleRainbowPick(dinoId) {
+  if (!isRainbowSelectMode) return;
+  if (selectedRainbowIds.has(dinoId)) {
+    selectedRainbowIds.delete(dinoId);
+  } else {
+    selectedRainbowIds.add(dinoId);
+  }
+  update();
+}
+
+// 選択した虹レアを生命の結晶へ還元実行
+function handleExecuteRainbowConvert() {
+  if (!canAct()) return;
+  if (selectedRainbowIds.size === 0) return;
+
+  const busyIds = getBusyExpeditionDinoIds();
+
+  // 保護対象が混ざっていないか最終チェック
+  const validTargets = game.dinos.filter(d => {
+    if (!selectedRainbowIds.has(d.uid)) return false;
+    if ((d.rarityType ?? "white") !== "rainbow") return false;
+    if (d.uid === game.activeDinoId) return false;
+    if (d.locked || d.mutant) return false;
+    if (d.color && d.color !== "normal") return false;
+    if (busyIds.has(d.uid)) return false;
+    if (d.uid === selectedMale || d.uid === selectedFemale) return false;
+    return true;
+  });
+
+  if (validTargets.length === 0) {
+    selectedRainbowIds.clear();
+    update();
+    return;
+  }
+
+  // 最後の1体は残す安全チェック
+  if (game.dinos.length - validTargets.length < 1) {
+    alert("最後の1体は還元できません！");
+    return;
+  }
+
+  const totalCrystals = validTargets.reduce((sum, d) => sum + getRainbowCrystalReturn(d), 0);
+  const nameList = validTargets.map(d => `・${d.name}（F${d.generation ?? 0} / Lv.${d.level}）`).join("\n");
+
+  const ok = confirm(
+    `💎 【虹レア結晶還元の最終確認】\n` +
+    `以下の ${validTargets.length}体 とお別れして「💎 生命の結晶 ×${totalCrystals}個」に還元しますか？\n\n` +
+    `${nameList}`
+  );
+  if (!ok) return;
+
+  const removeSet = new Set(validTargets.map(d => d.uid));
+  game.dinos = game.dinos.filter(d => !removeSet.has(d.uid));
+
+  game.items.breedCrystal = (game.items.breedCrystal ?? 0) + totalCrystals;
+  game.stats.crystalsEarned = (game.stats.crystalsEarned ?? 0) + totalCrystals;
+  game.stats.dinosReleased = (game.stats.dinosReleased ?? 0) + validTargets.length;
+
+  selectedRainbowIds.clear();
+  isRainbowSelectMode = false;
+
+  addLog(`💎 【結晶還元】虹レア ${validTargets.length}体 を還元し、「💎 生命の結晶 ×${totalCrystals}個」を獲得した！`);
+  alert(`💎 還元完了！\n「生命の結晶 ×${totalCrystals}個」を手に入れました！`);
   update();
 }
 
@@ -1831,6 +1913,9 @@ const handlers = {
   onAdvanceWorldLoop: handleAdvanceWorldLoop,
   onAutoSelectExpMembers: handleAutoSelectExpMembers,
   onUpgradeMonument: handleUpgradeMonument,
+  onToggleRainbowMode: handleToggleRainbowMode,
+  onToggleRainbowPick: handleToggleRainbowPick,
+  onExecuteRainbowConvert: handleExecuteRainbowConvert,
   onCraftItem: handleCraftItem,
   onRollGacha: (times, isPremium = false) => handleRollGacha(times, isPremium),
   onUseTraitFruit: (dinoId) => handleUseTraitFruit(typeof dinoId === "string" ? dinoId : game.activeDinoId),
@@ -2085,7 +2170,10 @@ function update() {
       isAutoExploring,
       lastGachaResults,
       gachaMaxGen: getGachaMaxGeneration(),
-      premiumGachaRange: getPremiumGachaGenRange()
+      premiumGachaRange: getPremiumGachaGenRange(),
+      isRainbowSelectMode,
+      selectedRainbowIds,
+      getRainbowCrystalReturn,
     },
     handlers
   );

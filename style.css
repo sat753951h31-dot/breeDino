@@ -3519,6 +3519,88 @@ button{
   border-color: #ffcc80;
 }
 
+/* =========================================
+   虹レア個別結晶還元システム
+========================================= */
+.rainbow-convert-bar {
+  margin-bottom: 12px;
+}
+
+.rainbow-bar-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #fff8e1 0%, #f3e5f5 100%);
+  border: 1px solid #ce93d8;
+  font-size: 0.88em;
+}
+
+.rainbow-bar-row.is-active {
+  background: linear-gradient(90deg, #e1f5fe 0%, #f3e5f5 100%);
+  border: 2px solid #8e24aa;
+}
+
+.rainbow-bar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-rainbow-mode,
+.btn-rainbow-exec {
+  padding: 6px 12px;
+  font-size: 0.88em;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(90deg, #8e24aa 0%, #3949ab 100%);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-rainbow-exec:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-rainbow-cancel {
+  padding: 6px 10px;
+  font-size: 0.88em;
+  font-weight: bold;
+  color: #555;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.dino-card.is-rainbow-picked {
+  border: 2px solid #8e24aa !important;
+  background-color: #faf0ff !important;
+}
+
+.btn-rainbow-pick {
+  width: 100%;
+  padding: 7px 6px;
+  font-size: 0.84em;
+  font-weight: bold;
+  color: #6a1b9a;
+  background-color: #f3e5f5;
+  border: 1px solid #ab47bc;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-rainbow-pick.is-picked {
+  color: #fff;
+  background-color: #8e24aa;
+  border-color: #6a1b9a;
+}
 
 /* =========================================
    PC（ブラウザ版）用：タブナビゲーションを4列×2段に整列
