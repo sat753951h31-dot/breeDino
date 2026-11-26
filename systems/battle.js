@@ -53,12 +53,12 @@ export function getSizeDamageMultiplier(attackerSize, defenderSize) {
 }
 
 // 回避率計算に防御側の特性ボーナスを加算
-export function getDodgeChance(defenderSpd, attackerSpd, dodgeBonus = 0) {
+export function getDodgeChance(defenderSpd, attackerSpd, dodgeBonus = 0, sizeDodgeBonus = 0) {
   const baseDodge = defenderSpd <= attackerSpd
     ? 0.03
     : Math.min(0.5, 0.03 + (defenderSpd - attackerSpd) * 0.01);
 
-  return Math.min(0.65, baseDodge + dodgeBonus);
+  return Math.min(0.65, baseDodge + dodgeBonus + sizeDodgeBonus);
 }
 
 export function getEnemyForHunt(areaLevel) {
@@ -79,8 +79,8 @@ export function getEnemyForHunt(areaLevel) {
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
-function performAttack(attackerName, atk, atkSpd, defenderName, defenderHp, defSpd, addLog, dodgeBonus = 0, defMaxHp = 0, isPlayerAttack = false) {
-  if (Math.random() < getDodgeChance(defSpd, atkSpd, dodgeBonus)) {
+function performAttack(attackerName, atk, atkSpd, defenderName, defenderHp, defSpd, addLog, dodgeBonus = 0, defMaxHp = 0, isPlayerAttack = false, sizeDodgeBonus = 0) {
+  if (Math.random() < getDodgeChance(defSpd, atkSpd, dodgeBonus, sizeDodgeBonus)) {
     addLog(`💨 ${defenderName} は素早く攻撃を回避した！`);
     return defenderHp;
   }
@@ -156,6 +156,12 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
   const playerSizeMult = getSizeDamageMultiplier(playerSize, enemySize);
   const enemySizeMult = getSizeDamageMultiplier(enemySize, playerSize);
 
+  // 相手より体格が小さい場合、1段階ごとに回避率 +5%（最大 +15%）
+  const pRank = SIZE_RANK[playerSize] ?? 2;
+  const eRank = SIZE_RANK[enemySize] ?? 2;
+  const playerSizeDodge = Math.max(0, (eRank - pRank) * 0.05);
+  const enemySizeDodge = Math.max(0, (pRank - eRank) * 0.05);
+
   // 体格補正 × タイプ相性 × 海エリア地形補正 × 特性「鉄壁」を反映
   let playerAtk = Math.max(1, Math.floor(playerStats.atk * playerSizeMult * pMatchup * pTerrain));
   const enemyAtk = Math.max(1, Math.floor(enemy.baseAtk * enemySizeMult * eMatchup * eTerrain * damageTakenMult));
@@ -178,7 +184,7 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
   if (playerSizeMult > 1) {
     addLog(`📏 体格で勝っている！（与ダメージ ${Math.round(playerSizeMult * 100)}%）`);
   } else if (playerSizeMult < 1) {
-    addLog(`📏 相手の方が大きい…（与ダメージ ${Math.round(playerSizeMult * 100)}%）`);
+    addLog(`📏 相手の方が大きい…（与ダメージ ${Math.round(playerSizeMult * 100)}% ／ 回避率 +${Math.round(playerSizeDodge * 100)}%）`);
   }
   if (isCritical) {
     addLog("⚠️ 瀕死状態のため攻撃力低下");
@@ -191,12 +197,12 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
 
     if (playerFirst) {
       // 1. プレイヤーの攻撃
-      enemyHp = performAttack(player.name, playerAtk, playerSpd, enemy.name, enemyHp, enemySpd, addLog, 0, enemy.baseHp, true);
+      enemyHp = performAttack(player.name, playerAtk, playerSpd, enemy.name, enemyHp, enemySpd, addLog, 0, enemy.baseHp, true, enemySizeDodge);
       if (enemyHp <= 0) break;
 
       // 2. 敵の攻撃
       const prevHp = playerHp;
-      playerHp = performAttack(enemy.name, enemyAtk, enemySpd, player.name, playerHp, playerSpd, addLog, playerDodgeBonus);
+      playerHp = performAttack(enemy.name, enemyAtk, enemySpd, player.name, playerHp, playerSpd, addLog, playerDodgeBonus, 0, false, playerSizeDodge);
       const takenDmg = prevHp - playerHp;
 
       // 特性「棘の甲羅」のダメージ反射

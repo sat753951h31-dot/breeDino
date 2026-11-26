@@ -51,14 +51,16 @@
     <div class="dashboard-card adventure-card">
       <div class="adventure-header">
         <h3>🧭 フィールド探索</h3>
-        <button
-          id="typeChartBtn"
-          type="button"
-          class="btn-type-chart"
-          title="三すくみ：🍖肉食 ＞ 🌿草食 ＞ 🦅翼竜 ＞ 🍖肉食（有利時：攻撃1.3倍・被ダメ40%軽減）／ 🌊海生：海エリアで1.35倍・陸で0.75倍"
-        >
-          📊 タイプ相性
-        </button>
+        <div class="header-help-btns">
+          <button
+            type="button"
+            class="btn-help-pill is-tip js-open-tip"
+            data-tip-id="explore_battle"
+            title="タイプ相性・地形補正・体格（サイズ）のバトルルールを表示"
+          >
+            💡 Tips
+          </button>
+        </div>
       </div>
       <div id="exploreAreaBox"></div>
 

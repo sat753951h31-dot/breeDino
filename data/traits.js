@@ -95,19 +95,11 @@ export function rollTrait() {
   return TRAITS[Math.floor(Math.random() * TRAITS.length)].id;
 }
 
-// 両親の特性から子へ遺伝させる
-export function inheritTrait(traitA, traitB) {
-  const a = traitA ?? rollTrait();
-  const b = traitB ?? rollTrait();
-  const r = Math.random();
+// 交配時の特性決定（親の特性に関係なく、全特性から完全ランダムで抽選）
+export function inheritTrait() {
+  const list = Array.isArray(TRAITS) ? TRAITS : Object.values(TRAITS);
+  if (list.length === 0) return "brave";
 
-  // 両親が同じ特性なら 80% で確定継承、20% で突然変異
-  if (a === b) {
-    return r < 0.80 ? a : rollTrait();
-  }
-
-  // 異なる特性なら 45% で親A、45% で親B、10% で突然変異
-  if (r < 0.45) return a;
-  if (r < 0.90) return b;
-  return rollTrait();
+  const picked = list[Math.floor(Math.random() * list.length)];
+  return picked.id;
 }
