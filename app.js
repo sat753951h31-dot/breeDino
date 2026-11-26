@@ -1483,8 +1483,7 @@ function handleUseTraitFruit(targetDinoId = game.activeDinoId) {
   update();
 }
 
-// 💉 個体値強化の秘薬を使用
-// 💉 個体値強化の秘薬を使用
+// 💉 個体値強化の秘薬を使用（通常個体：上限100 ／ ミュータント：上限150）
 function handleUseIvElixir(targetDinoId = game.activeDinoId) {
   if (!canAct()) return;
   if ((game.items?.ivElixir ?? 0) <= 0) return;
@@ -1492,9 +1491,12 @@ function handleUseIvElixir(targetDinoId = game.activeDinoId) {
   const targetDino = game.dinos.find(d => d.uid === targetDinoId);
   if (!targetDino) return;
 
-  // 👇 上限判定を 150 に修正
-  if (targetDino.atkIv >= 150 && targetDino.hpIv >= 150 && targetDino.spdIv >= 150) {
-    alert(`${targetDino.name} の個体値（IV）はすでにすべて最大上限（150）に達しています！`);
+  // ミュータントなら上限150、通常個体は上限100
+  const maxIv = targetDino.mutant ? 150 : 100;
+
+  if (targetDino.atkIv >= maxIv && targetDino.hpIv >= maxIv && targetDino.spdIv >= maxIv) {
+    const extraHint = !targetDino.mutant ? "\n（※突然変異個体【MUTANT】のみ上限150まで強化できます）" : "";
+    alert(`${targetDino.name} の個体値（IV）はすでに上限（${maxIv}）に達しています！${extraHint}`);
     return;
   }
 
@@ -1502,16 +1504,15 @@ function handleUseIvElixir(targetDinoId = game.activeDinoId) {
     `⚠️ 【貴重品の使用確認】\n` +
     `「💉 個体値強化の秘薬」を 1個 消費して、${targetDino.name} を強化しますか？\n\n` +
     `現在の個体値：ATK ${targetDino.atkIv} / HP ${targetDino.hpIv} / SPD ${targetDino.spdIv}\n` +
-    `※すべての個体値が +10 上昇します（上限150）`
+    `※すべての個体値が +10 上昇します（上限${maxIv}）`
   );
   if (!ok) return;
 
   game.items.ivElixir--;
   game.stats.itemsUsed = (game.stats.itemsUsed ?? 0) + 1;
-  // 👇 上限を 150 に修正（110 や 127 からも +10 されて 120・137 になります）
-  targetDino.atkIv = Math.min(150, (targetDino.atkIv ?? 0) + 10);
-  targetDino.hpIv = Math.min(150, (targetDino.hpIv ?? 0) + 10);
-  targetDino.spdIv = Math.min(150, (targetDino.spdIv ?? 0) + 10);
+  targetDino.atkIv = Math.min(maxIv, (targetDino.atkIv ?? 0) + 10);
+  targetDino.hpIv = Math.min(maxIv, (targetDino.hpIv ?? 0) + 10);
+  targetDino.spdIv = Math.min(maxIv, (targetDino.spdIv ?? 0) + 10);
 
   const newStats = calculateStats(targetDino);
   targetDino.currentHp = Math.min(newStats.hp, targetDino.currentHp + 50);

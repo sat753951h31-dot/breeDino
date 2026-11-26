@@ -218,7 +218,7 @@ function renderStatusAndLogs(game, selectedMale, selectedFemale) {
           <div class="food-icon">💉</div>
           <div class="food-name">個体値強化の秘薬</div>
           <div class="food-count">所持: <strong>${elixirCount}</strong>個</div>
-          <div class="food-desc">全個体値IV +10 (上限150)</div>
+          <div class="food-desc">全IV +10 (通常100 / 変異150)</div>
           <button
             id="useIvElixirBtn"
             class="btn-use-special"
