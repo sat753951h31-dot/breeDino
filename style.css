@@ -3602,6 +3602,30 @@ button{
   border-color: #6a1b9a;
 }
 
+/* 表示中を一括選択ボタン */
+.btn-rainbow-bulk {
+  padding: 6px 10px;
+  font-size: 0.85em;
+  font-weight: bold;
+  color: #1565c0;
+  background-color: #ffffff;
+  border: 1px solid #64b5f6;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-rainbow-bulk:hover:not(:disabled) {
+  background-color: #e3f2fd;
+}
+
+.btn-rainbow-bulk:disabled {
+  color: #999;
+  border-color: #ddd;
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
 /* =========================================
    PC（ブラウザ版）用：タブナビゲーションを4列×2段に整列
 ========================================= */

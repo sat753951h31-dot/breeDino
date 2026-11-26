@@ -908,6 +908,20 @@ function handleToggleRainbowPick(dinoId) {
   update();
 }
 
+// 表示中の対象虹レアを一括で選択状態にする
+function handleSelectAllFilteredRainbows(targetIds = []) {
+  if (!isRainbowSelectMode) return;
+  targetIds.forEach(id => selectedRainbowIds.add(id));
+  update();
+}
+
+// 選択中の虹レアをすべて解除する
+function handleClearRainbowPicks() {
+  if (!isRainbowSelectMode) return;
+  selectedRainbowIds.clear();
+  update();
+}
+
 // 選択した虹レアを生命の結晶へ還元実行
 function handleExecuteRainbowConvert() {
   if (!canAct()) return;
@@ -1916,6 +1930,8 @@ const handlers = {
   onToggleRainbowMode: handleToggleRainbowMode,
   onToggleRainbowPick: handleToggleRainbowPick,
   onExecuteRainbowConvert: handleExecuteRainbowConvert,
+  onSelectAllFilteredRainbows: handleSelectAllFilteredRainbows,
+  onClearRainbowPicks: handleClearRainbowPicks,
   onCraftItem: handleCraftItem,
   onRollGacha: (times, isPremium = false) => handleRollGacha(times, isPremium),
   onUseTraitFruit: (dinoId) => handleUseTraitFruit(typeof dinoId === "string" ? dinoId : game.activeDinoId),

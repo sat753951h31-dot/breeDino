@@ -443,53 +443,9 @@ function renderDinoList(game, state, handlers) {
   if (!el) return;
   el.innerHTML = "";
 
-  // 💎 虹レア結晶還元バーの描画
-  const rainbowBar = document.getElementById("rainbowConvertBar");
-  if (rainbowBar) {
-    const isMode = Boolean(state.isRainbowSelectMode);
-    const pickedSet = state.selectedRainbowIds ?? new Set();
-    const calcReturn = state.getRainbowCrystalReturn ?? ((d) => 5 + Math.min(10, d.generation ?? 0));
-
-    const pickedDinos = game.dinos.filter(d => pickedSet.has(d.uid));
-    const totalGain = pickedDinos.reduce((sum, d) => sum + calcReturn(d), 0);
-
-    if (!isMode) {
-      rainbowBar.innerHTML = `
-        <div class="rainbow-bar-row">
-          <span>🌈 <strong>余った虹レアの結晶還元：</strong>個別に選んで「💎 生命の結晶」に変換できます</span>
-          <button id="toggleRainbowModeBtn" class="btn-rainbow-mode">💎 虹レアを選んで還元する</button>
-        </div>
-      `;
-    } else {
-      rainbowBar.innerHTML = `
-        <div class="rainbow-bar-row is-active">
-          <div>
-            <strong>💎 還元モード選択中：${pickedDinos.length}体 選択（獲得予定：💎 ${totalGain}個）</strong><br>
-            <small>※育成中・遠征中・交配中・🔒ロック・🧬変異・✨希少体色は自動で保護されます</small>
-          </div>
-          <div class="rainbow-bar-actions">
-            <button id="execRainbowConvertBtn" class="btn-rainbow-exec" ${pickedDinos.length === 0 ? "disabled" : ""}>
-              ✨ 結晶 ${totalGain}個 に還元
-            </button>
-            <button id="cancelRainbowModeBtn" class="btn-rainbow-cancel">✕ 終了</button>
-          </div>
-        </div>
-      `;
-    }
-
-    const startBtn = document.getElementById("toggleRainbowModeBtn");
-    if (startBtn) startBtn.onclick = handlers.onToggleRainbowMode;
-
-    const execBtn = document.getElementById("execRainbowConvertBtn");
-    if (execBtn) execBtn.onclick = handlers.onExecuteRainbowConvert;
-
-    const cancelBtn = document.getElementById("cancelRainbowModeBtn");
-    if (cancelBtn) cancelBtn.onclick = handlers.onToggleRainbowMode;
-  }
-
   const speciesSelect = document.getElementById("filterSpecies");
   const keyword = (state.filterName ?? "").trim().toLowerCase();
-  
+
   if (speciesSelect) {
     // 種族ごとの所持数をカウント
     const countMap = new Map();
@@ -513,8 +469,7 @@ function renderDinoList(game, state, handlers) {
     speciesSelect.innerHTML = optionsHtml.join("");
   }
 
-  // 1. 名前・種族・性別・タイプで絞り込み
-  // 1. 名前・種族・性別・タイプ・レア度・世代で絞り込み
+  // 1. 名前・種族・性別・タイプ・レア度・世代・ロックで絞り込み
   let list = game.dinos.filter(dino => {
     if (keyword !== "") {
       const currentName = (dino.name ?? "").toLowerCase();
@@ -573,15 +528,84 @@ function renderDinoList(game, state, handlers) {
     list.sort((a, b) => (b.atkIv + b.hpIv + b.spdIv) - (a.atkIv + a.hpIv + a.spdIv));
   }
 
-  if (list.length === 0) {
-    el.innerHTML = "<p>条件に一致する恐竜がいません。</p>";
-    return;
-  }
-
+  // 遠征中の恐竜IDセット
   const busyIds = new Set();
   (game.expeditions ?? []).forEach(exp => {
     exp.memberIds.forEach(id => busyIds.add(id));
   });
+
+  // 💎 虹レア結晶還元バーの描画（絞り込み後の list を使って表示中対象をカウント）
+  const rainbowBar = document.getElementById("rainbowConvertBar");
+  if (rainbowBar) {
+    const isMode = Boolean(state.isRainbowSelectMode);
+    const pickedSet = state.selectedRainbowIds ?? new Set();
+    const calcReturn = state.getRainbowCrystalReturn ?? ((d) => 5 + Math.min(10, d.generation ?? 0));
+
+    // 表示中の恐竜のうち、保護対象外の虹レアIDだけを抽出
+    const visibleTargetIds = list.filter(d => {
+      if ((d.rarityType ?? "white") !== "rainbow") return false;
+      if (d.uid === game.activeDinoId) return false;
+      if (busyIds.has(d.uid)) return false;
+      if (d.uid === state.selectedMale || d.uid === state.selectedFemale) return false;
+      if (d.locked || d.mutant) return false;
+      if (d.color && d.color !== "normal") return false;
+      return true;
+    }).map(d => d.uid);
+
+    const unpickedVisibleCount = visibleTargetIds.filter(id => !pickedSet.has(id)).length;
+    const pickedDinos = game.dinos.filter(d => pickedSet.has(d.uid));
+    const totalGain = pickedDinos.reduce((sum, d) => sum + calcReturn(d), 0);
+
+    if (!isMode) {
+      rainbowBar.innerHTML = `
+        <div class="rainbow-bar-row">
+          <span>🌈 <strong>余った虹レアの結晶還元：</strong>個別に選んで「💎 生命の結晶」に変換できます</span>
+          <button id="toggleRainbowModeBtn" class="btn-rainbow-mode">💎 虹レアを選んで還元する</button>
+        </div>
+      `;
+    } else {
+      rainbowBar.innerHTML = `
+        <div class="rainbow-bar-row is-active">
+          <div>
+            <strong>💎 還元モード選択中：${pickedDinos.length}体 選択（獲得予定：💎 ${totalGain}個）</strong><br>
+            <small>※現在表示中の対象のみ一括選択できます（保護対象は自動除外）</small>
+          </div>
+          <div class="rainbow-bar-actions">
+            <button id="selectAllVisibleRainbowBtn" class="btn-rainbow-bulk" ${unpickedVisibleCount === 0 ? "disabled" : ""}>
+              ☑️ 表示中を一括選択 (+${unpickedVisibleCount}体)
+            </button>
+            <button id="clearRainbowPicksBtn" class="btn-rainbow-cancel" ${pickedDinos.length === 0 ? "disabled" : ""}>
+              選択解除
+            </button>
+            <button id="execRainbowConvertBtn" class="btn-rainbow-exec" ${pickedDinos.length === 0 ? "disabled" : ""}>
+              ✨ 結晶 ${totalGain}個 に還元
+            </button>
+            <button id="cancelRainbowModeBtn" class="btn-rainbow-cancel">✕ 終了</button>
+          </div>
+        </div>
+      `;
+    }
+
+    const startBtn = document.getElementById("toggleRainbowModeBtn");
+    if (startBtn) startBtn.onclick = handlers.onToggleRainbowMode;
+
+    const selectAllBtn = document.getElementById("selectAllVisibleRainbowBtn");
+    if (selectAllBtn) selectAllBtn.onclick = () => handlers.onSelectAllFilteredRainbows(visibleTargetIds);
+
+    const clearBtn = document.getElementById("clearRainbowPicksBtn");
+    if (clearBtn) clearBtn.onclick = handlers.onClearRainbowPicks;
+
+    const execBtn = document.getElementById("execRainbowConvertBtn");
+    if (execBtn) execBtn.onclick = handlers.onExecuteRainbowConvert;
+
+    const cancelBtn = document.getElementById("cancelRainbowModeBtn");
+    if (cancelBtn) cancelBtn.onclick = handlers.onToggleRainbowMode;
+  }
+
+  if (list.length === 0) {
+    el.innerHTML = "<p>条件に一致する恐竜がいません。</p>";
+    return;
+  }
 
   list.forEach(dino => {
     const stats = calculateStats(dino);
