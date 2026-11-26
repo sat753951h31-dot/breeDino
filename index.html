@@ -285,29 +285,6 @@
   <div id="gachaResultArea"></div>
 </section>
 
-<hr>
-<footer class="footer-debug-bar">
-  <button id="resetSave" class="btn-footer-reset">🗑️ セーブデータ初期化</button>
-  <div class="footer-backup-group">
-    <button id="exportSaveBtn" class="btn-footer-backup">📤 セーブ（書き出し）</button>
-    <button id="importSaveBtn" class="btn-footer-backup">📥 ロード（読み込み）</button>
-  </div>
-</footer>
-
-<!-- セーブ・ロード用モーダル（文字数制限なし） -->
-<div id="backupModal" class="backup-modal" style="display: none;">
-  <div class="backup-modal-content">
-    <h3 id="backupModalTitle">📤 セーブデータの書き出し</h3>
-    <p id="backupModalDesc" class="backup-modal-desc"></p>
-    <textarea id="backupTextArea" rows="8" placeholder="ここにセーブ文字列を貼り付けてください..."></textarea>
-    <div class="backup-modal-actions">
-      <button id="backupCopyBtn" class="btn-footer-backup">📋 コピーする</button>
-      <button id="backupExecLoadBtn" class="btn-upgrade">✅ このデータで復元する</button>
-      <button id="backupCloseBtn" class="btn-footer-reset">閉じる</button>
-    </div>
-  </div>
-</div>
-
 <!-- 早見表用モーダル（特殊レシピ・特性一覧） -->
 <div id="guideModal" class="backup-modal" style="display: none;">
   <div class="backup-modal-content guide-modal-content">

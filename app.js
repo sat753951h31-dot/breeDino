@@ -2222,7 +2222,7 @@ document.getElementById("filterType")?.addEventListener("change", (e) => {
   update();
 });
 
-document.getElementById("resetSave").addEventListener("click", () => {
+document.getElementById("resetSave")?.addEventListener("click", () => {
   localStorage.clear();
   location.reload();
 });
