@@ -1154,11 +1154,17 @@ function renderBreedingStage(game, selectedMale, selectedFemale) {
 
     const isCapped = (lvInfo.inheritedBonus + lvInfo.trainBonus) > lvInfo.maxAllowedBonus;
 
+    const maleSpeciesName = getSpeciesName(male.speciesId);
+    const femaleSpeciesName = getSpeciesName(female.speciesId);
+    const normalResultText = male.speciesId === female.speciesId
+      ? `<strong>${maleSpeciesName}（F${lvInfo.nextGen}）</strong>`
+      : `<strong>${maleSpeciesName}</strong> または <strong>${femaleSpeciesName}</strong>（各50% / F${lvInfo.nextGen}）`;
+
     previewHtml = `
       <div class="breed-preview">
         ${special
           ? `✨ <strong>特殊交配レシピ成立！</strong>「${special.result.name}（F${lvInfo.nextGen}）」`
-          : `🥚 誕生予定：<strong>${male.name}（F${lvInfo.nextGen}）</strong>`
+          : `🥚 誕生予定：${normalResultText}`
         }
         <br>
         📈 レベル上限：<strong>Lv.${lvInfo.totalMaxLevel}</strong>
@@ -1166,6 +1172,7 @@ function renderBreedingStage(game, selectedMale, selectedFemale) {
         ＋ ボーナス <strong>+${lvInfo.totalBonus}</strong>${isCapped ? ` <small>※F${lvInfo.nextGen}上限</small>` : ""}）
       </div>
     `;
+
   }
 
   parentInfo.innerHTML = `

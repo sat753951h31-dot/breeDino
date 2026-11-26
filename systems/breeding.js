@@ -20,15 +20,16 @@ export function breed(parentA, parentB) {
     );
   const lvInfo = getChildMaxLevelInfo(parentA, parentB);
   const parentMaxGen = Math.max(parentA.generation ?? 0, parentB.generation ?? 0);
+  const inheritedParent = Math.random() < 0.5 ? parentA : parentB;
 
   const baseData =
     specialBreed
       ? specialBreed.result
       : {
-          id: parentA.speciesId,
-          name: resolveSpeciesName(parentA.speciesId, parentA.name),
+          id: inheritedParent.speciesId,
+          name: resolveSpeciesName(inheritedParent.speciesId, inheritedParent.name),
 
-          size: parentA.size,
+          size: inheritedParent.size,
 
           rarity:
             Math.max(
@@ -37,13 +38,13 @@ export function breed(parentA, parentB) {
             ),
 
           baseAtk:
-            parentA.baseAtk,
+            inheritedParent.baseAtk,
 
           baseHp:
-            parentA.baseHp,
+            inheritedParent.baseHp,
 
           baseSpd:
-            parentA.baseSpd
+            inheritedParent.baseSpd
         };
 
   // 👇 両親のサイズから遺伝・変異させる
