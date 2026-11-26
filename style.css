@@ -3511,6 +3511,13 @@ button{
   white-space: nowrap;
 }
 
+/* 汎用Tipsボタンのカラー */
+.btn-help-pill.is-tip {
+  color: #e65100;
+  background-color: #fff3e0;
+  border-color: #ffcc80;
+}
+
 
 /* =========================================
    PC（ブラウザ版）用：タブナビゲーションを4列×2段に整列

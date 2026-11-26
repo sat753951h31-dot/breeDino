@@ -207,11 +207,12 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
         if (enemyHp <= 0) break;
       }
 
-      // 特性「不屈」の発動チェック
+      // 特性「不屈」の発動チェック（先攻パターン・後攻パターンの両方とも同じ記述に更新）
       if (playerHp <= 0 && playerTrait.effect.endure && !endureUsed) {
-        playerHp = 1;
+        const healHp = Math.max(1, Math.floor(playerStats.hp * 0.30));
+        playerHp = healHp;
         endureUsed = true;
-        addLog(`❤️‍🔥 ${player.name} は特性【不屈】で致死ダメージをHP1で耐えた！`);
+        addLog(`❤️‍🔥 ${player.name} は特性【不屈】で踏みとどまり、HPを ${healHp}（30%）まで回復した！`);
       }
     } else {
       // 1. 敵の攻撃

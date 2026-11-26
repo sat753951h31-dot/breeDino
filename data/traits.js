@@ -31,7 +31,7 @@ export const TRAITS = [
     id: "endure",
     icon: "❤️‍🔥",
     name: "不屈",
-    desc: "1回の戦闘につき1度だけ、HPが0になるダメージをHP1で耐える",
+    desc: "戦闘中1度だけ、HPが0になるダメージを耐えて最大HPの30%まで回復する",
     effect: { endure: true }
   },
   {

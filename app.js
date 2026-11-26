@@ -2360,6 +2360,49 @@ function openGuideModal(title, html) {
   guideModal.style.display = "flex";
 }
 
+// 💡 汎用Tipsデータ（ここにキーを追加するだけでどの画面でも使い回せます）
+const TIPS_DATA = {
+  breeding_level: {
+    title: "💡 交配とレベル上限の仕組み",
+    items: [
+      {
+        title: "1. 生まれる世代（F）の決まり方",
+        desc: "両親のうち「低い方の世代 ＋ 1」になります。（例：F2 × F0 → F1 ／ F2 × F2 → F3）"
+      },
+      {
+        title: "2. 世代ごとの基本レベル上限",
+        desc: "F0は Lv.20 から始まり、1世代進むごとに基本上限が +5 ずつ増えます。（F1: Lv.25 / F2: Lv.30 / F3: Lv.35…）"
+      },
+      {
+        title: "3. 親の育成ボーナス（最大 +10）",
+        desc: "親のレベルを最大上限まで育ててから交配すると、子供にボーナスが加算されます。（片親MAXで +5、両親MAXで +10）"
+      },
+      {
+        title: "4. 継承ボーナスと世代上限キャップ",
+        desc: "両親がすでに持つボーナス（高い方）も引き継がれます。ただし、1世代で持てるボーナス上限は「世代数 × 10」までです。（例：F1は最大+10、F2は最大+20）"
+      }
+    ]
+  }
+};
+
+// 💡 汎用Tipsボタンのクリック処理（静的HTML・動的描画のどちらでも動作）
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".js-open-tip[data-tip-id]");
+  if (!btn) return;
+
+  const tip = TIPS_DATA[btn.dataset.tipId];
+  if (!tip) return;
+
+  const html = tip.items.map(item => `
+    <div class="guide-item">
+      <div class="guide-item-title"><strong>${item.title}</strong></div>
+      <div class="guide-item-desc">${item.desc}</div>
+    </div>
+  `).join("");
+
+  openGuideModal(tip.title, html);
+});
+
 // ✨ 特性一覧ボタン（探索タブ・交配タブ共通）
 document.querySelectorAll(".js-open-traits").forEach(btn => {
   btn.addEventListener("click", () => {
