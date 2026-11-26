@@ -89,7 +89,7 @@ export const CRAFT_RECIPES = [
     id: "craft_iv_elixir",
     icon: "💉",
     name: "個体値強化の秘薬 ×1",
-    desc: "恐竜の個体値（ATK・HP・SPD IV）をすべて +10 する（上限100）",
+    desc: "恐竜の個体値（ATK・HP・SPD IV）をすべて +10 する（上限150）",
     cost: { stone: 25, ore: 10 },
     costText: "🪨 石材×25 ＋ 🔮 鉱石×10"
   }

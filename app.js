@@ -1471,6 +1471,7 @@ function handleUseTraitFruit(targetDinoId = game.activeDinoId) {
 }
 
 // 💉 個体値強化の秘薬を使用
+// 💉 個体値強化の秘薬を使用
 function handleUseIvElixir(targetDinoId = game.activeDinoId) {
   if (!canAct()) return;
   if ((game.items?.ivElixir ?? 0) <= 0) return;
@@ -1478,8 +1479,9 @@ function handleUseIvElixir(targetDinoId = game.activeDinoId) {
   const targetDino = game.dinos.find(d => d.uid === targetDinoId);
   if (!targetDino) return;
 
-  if (targetDino.atkIv >= 100 && targetDino.hpIv >= 100 && targetDino.spdIv >= 100) {
-    alert(`${targetDino.name} の個体値（IV）はすでにすべて上限（100）に達しています！`);
+  // 👇 上限判定を 150 に修正
+  if (targetDino.atkIv >= 150 && targetDino.hpIv >= 150 && targetDino.spdIv >= 150) {
+    alert(`${targetDino.name} の個体値（IV）はすでにすべて最大上限（150）に達しています！`);
     return;
   }
 
@@ -1487,15 +1489,16 @@ function handleUseIvElixir(targetDinoId = game.activeDinoId) {
     `⚠️ 【貴重品の使用確認】\n` +
     `「💉 個体値強化の秘薬」を 1個 消費して、${targetDino.name} を強化しますか？\n\n` +
     `現在の個体値：ATK ${targetDino.atkIv} / HP ${targetDino.hpIv} / SPD ${targetDino.spdIv}\n` +
-    `※すべての個体値が +10 上昇します（上限100）`
+    `※すべての個体値が +10 上昇します（上限150）`
   );
   if (!ok) return;
 
   game.items.ivElixir--;
   game.stats.itemsUsed = (game.stats.itemsUsed ?? 0) + 1;
-  targetDino.atkIv = Math.min(100, (targetDino.atkIv ?? 0) + 10);
-  targetDino.hpIv = Math.min(100, (targetDino.hpIv ?? 0) + 10);
-  targetDino.spdIv = Math.min(100, (targetDino.spdIv ?? 0) + 10);
+  // 👇 上限を 150 に修正（110 や 127 からも +10 されて 120・137 になります）
+  targetDino.atkIv = Math.min(150, (targetDino.atkIv ?? 0) + 10);
+  targetDino.hpIv = Math.min(150, (targetDino.hpIv ?? 0) + 10);
+  targetDino.spdIv = Math.min(150, (targetDino.spdIv ?? 0) + 10);
 
   const newStats = calculateStats(targetDino);
   targetDino.currentHp = Math.min(newStats.hp, targetDino.currentHp + 50);
