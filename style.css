@@ -3493,6 +3493,25 @@ button{
   cursor: not-allowed;
 }
 
+/* 古代工房カードのタイトル＆所持数バッジ横並び */
+.craft-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.craft-owned-badge {
+  font-size: 0.78em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+  white-space: nowrap;
+}
+
+
 /* =========================================
    PC（ブラウザ版）用：タブナビゲーションを4列×2段に整列
 ========================================= */

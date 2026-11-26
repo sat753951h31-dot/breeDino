@@ -1416,22 +1416,35 @@ function handleCraftItem(recipeId) {
     }
   }
 
+  let newTotal = 0;
+  let itemLabel = "";
+
   // アイテム付与
   if (recipeId === "craft_crystal") {
     game.items.breedCrystal = (game.items.breedCrystal ?? 0) + 3;
     game.stats.crystalsEarned = (game.stats.crystalsEarned ?? 0) + 3;
+    newTotal = game.items.breedCrystal;
+    itemLabel = "💎 生命の結晶";
   } else if (recipeId === "craft_premium_meat") {
     game.foods.premium = (game.foods.premium ?? 0) + 5;
+    newTotal = game.foods.premium;
+    itemLabel = "✨ 極上肉";
   } else if (recipeId === "craft_trait_fruit") {
     game.items.traitFruit = (game.items.traitFruit ?? 0) + 1;
+    newTotal = game.items.traitFruit;
+    itemLabel = "🎲 特性変更の果実";
   } else if (recipeId === "craft_iv_elixir") {
     game.items.ivElixir = (game.items.ivElixir ?? 0) + 1;
+    newTotal = game.items.ivElixir;
+    itemLabel = "💉 個体値強化の秘薬";
   }
 
   game.stats.itemsCrafted = (game.stats.itemsCrafted ?? 0) + 1;
 
-  addLog(`🔨 【古代工房】「${recipe.icon} ${recipe.name}」を作成した！`);
+  addLog(`🔨 【古代工房】「${recipe.icon} ${recipe.name}」を作成した！（所持数: ${newTotal}個）`);
+  alert(`🔨 クラフト完了！\n\n「${recipe.icon} ${recipe.name}」を作成しました！\n現在の${itemLabel}の所持数：${newTotal} 個`);
   update();
+
 }
 
 // 🎲 特性変更の果実を使用

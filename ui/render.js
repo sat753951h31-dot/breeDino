@@ -1380,18 +1380,30 @@ function renderFacility(game, handlers) {
               const owned = ["wood", "stone", "ore"].includes(k) ? (mats[k] ?? 0) : (foods[k] ?? 0);
               return owned >= needed;
             });
+
+            // 現在の所持数を取得
+            let currentOwned = 0;
+            if (r.id === "craft_crystal") currentOwned = game.items?.breedCrystal ?? 0;
+            else if (r.id === "craft_premium_meat") currentOwned = foods.premium ?? 0;
+            else if (r.id === "craft_trait_fruit") currentOwned = game.items?.traitFruit ?? 0;
+            else if (r.id === "craft_iv_elixir") currentOwned = game.items?.ivElixir ?? 0;
+
             return `
               <div class="craft-card">
-                <div class="craft-title">${r.icon} <strong>${r.name}</strong></div>
+                <div class="craft-header-row">
+                  <div class="craft-title">${r.icon} <strong>${r.name}</strong></div>
+                  <span class="craft-owned-badge">所持: <strong>${currentOwned}</strong>個</span>
+                </div>
                 <div class="craft-desc">${r.desc}</div>
                 <div class="facility-cost">素材：${r.costText}</div>
                 <button class="btn-craft" data-id="${r.id}" ${!canCraft ? "disabled" : ""}>
-                  ${isWorkshopUnlocked ? "🔨 作成する" : "🔒 4施設MAXで解放"}
+                  ${isWorkshopUnlocked ? `🔨 作成する（所持: ${currentOwned}）` : "🔒 4施設MAXで解放"}
                 </button>
               </div>
             `;
           }).join("")}
         </div>
+
       </div>
     `;
 
