@@ -3024,6 +3024,160 @@ button{
   font-weight: bold;
 }
 
+/* フィールド探索ヘッダー ＆ タイプ相性ボタン */
+.adventure-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin-bottom: 8px;
+}
+
+.adventure-header h3 {
+  margin: 0;
+  white-space: nowrap;
+  font-size: 1.05em;
+}
+
+.btn-type-chart {
+  padding: 4px 10px;
+  font-size: 0.82em;
+  font-weight: bold;
+  color: #1565c0;
+  background-color: #e3f2fd;
+  border: 1px solid #90caf9;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-type-chart:hover {
+  background-color: #bbdefb;
+}
+
+/* =========================================
+   早見表ボタン ＆ モーダルスタイル
+========================================= */
+.breeding-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.breeding-header h2 {
+  margin: 0;
+}
+
+.header-help-btns {
+  display: flex;
+  gap: 5px;
+  flex-wrap: nowrap;
+}
+
+.btn-help-pill {
+  padding: 3px 8px;
+  font-size: 0.76em;
+  font-weight: bold;
+  color: #1565c0;
+  background-color: #e3f2fd;
+  border: 1px solid #90caf9;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-help-pill:hover {
+  filter: brightness(0.95);
+}
+
+.btn-help-pill.is-trait {
+  color: #2e7d32;
+  background-color: #e8f5e9;
+  border-color: #a5d6a7;
+}
+
+.btn-help-pill.is-recipe {
+  color: #6a1b9a;
+  background-color: #f3e5f5;
+  border-color: #ce93d8;
+}
+
+.guide-modal-content {
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.guide-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.guide-modal-header h3 {
+  margin: 0;
+  font-size: 1.05em;
+}
+
+.guide-modal-body {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.guide-item {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  font-size: 0.88em;
+}
+
+.guide-item.is-discovered {
+  background-color: #fdf7ff;
+  border-color: #e1bee7;
+}
+
+.guide-item-title {
+  font-size: 0.98em;
+  margin-bottom: 2px;
+}
+
+.guide-item-desc {
+  color: #555;
+  line-height: 1.4;
+}
+
+.guide-recipe-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.guide-no {
+  font-size: 0.8em;
+  font-weight: bold;
+  color: #7b1fa2;
+  background-color: #f3e5f5;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.guide-result {
+  margin-top: 4px;
+  color: #333;
+}
+
 /* =========================================
    スマホ用：検索・絞り込みバーの2列折り返し修正
 ========================================= */

@@ -48,7 +48,17 @@
 
     <!-- 右カード：エリア探索 ＆ ログ（探索セット） -->
     <div class="dashboard-card adventure-card">
-      <h3>🧭 フィールド探索</h3>
+      <div class="adventure-header">
+        <h3>🧭 フィールド探索</h3>
+        <button
+          id="typeChartBtn"
+          type="button"
+          class="btn-type-chart"
+          title="三すくみ：🍖肉食 ＞ 🌿草食 ＞ 🦅翼竜 ＞ 🍖肉食（有利時：攻撃1.3倍・被ダメ40%軽減）／ 🌊海生：海エリアで1.35倍・陸で0.75倍"
+        >
+          📊 タイプ相性
+        </button>
+      </div>
       <div id="exploreAreaBox"></div>
 
       <div id="battleStage" class="battle-stage area-bg-1">
@@ -174,7 +184,26 @@
 <!-- ③ 交配・卵タブ -->
 <section id="tab-breed" class="tab-panel">
   <div class="breeding-stage">
-    <h2>🧬 恐竜交配</h2>
+    <div class="breeding-header">
+      <h2>🧬 恐竜交配</h2>
+      <div class="header-help-btns">
+        <button
+          id="recipeListBtn"
+          type="button"
+          class="btn-help-pill is-recipe"
+          title="特殊交配の組み合わせ早見表を表示"
+        >
+          🧬 特殊レシピ
+        </button>
+        <button
+          type="button"
+          class="btn-help-pill is-trait js-open-traits"
+          title="すべての特性と効果の一覧を表示"
+        >
+          ✨ 特性一覧
+        </button>
+      </div>
+    </div>
     <div id="parentInfo"></div>
     <div class="breed-btn-group">
       <button id="breedBtn" class="btn-breed-main" disabled>🥚 交配して卵を作る</button>
@@ -253,6 +282,17 @@
       <button id="backupExecLoadBtn" class="btn-upgrade">✅ このデータで復元する</button>
       <button id="backupCloseBtn" class="btn-footer-reset">閉じる</button>
     </div>
+  </div>
+</div>
+
+<!-- 早見表用モーダル（特殊レシピ・特性一覧） -->
+<div id="guideModal" class="backup-modal" style="display: none;">
+  <div class="backup-modal-content guide-modal-content">
+    <div class="guide-modal-header">
+      <h3 id="guideModalTitle">📖 早見表</h3>
+      <button id="guideCloseTopBtn" type="button" class="btn-footer-reset">✕ 閉じる</button>
+    </div>
+    <div id="guideModalBody" class="guide-modal-body"></div>
   </div>
 </div>
 

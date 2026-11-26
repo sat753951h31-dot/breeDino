@@ -120,10 +120,11 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
 
   // 相性ログの表示
   if (pMatchup > 1) {
-    addLog(`🔥 タイプ有利！（${pType.icon}${pType.name} ＞ ${eType.icon}${eType.name}：攻撃力1.3倍）`);
+    addLog(`🔥 タイプ有利！（${pType.icon}${pType.name} ＞ ${eType.icon}${eType.name}：攻撃1.3倍 ＆ 被ダメ40%軽減！）`);
   } else if (pMatchup < 1) {
-    addLog(`💧 タイプ不利…（${pType.icon}${pType.name} ＜ ${eType.icon}${eType.name}：攻撃力0.75倍）`);
+    addLog(`💧 タイプ不利…（${pType.icon}${pType.name} ＜ ${eType.icon}${eType.name}：攻撃0.6倍 ＆ 被ダメ1.3倍）`);
   }
+
 
   if (pType.id === "marine") {
     addLog(isSeaArea
@@ -144,6 +145,9 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
   // プレイヤーの特性効果を取得
   const playerTrait = getTraitData(player.trait);
   const playerDodgeBonus = playerTrait.effect.dodgeBonus ?? 0;
+  const damageTakenMult = playerTrait.effect.damageTakenMult ?? 1.0;
+  const regenRate = playerTrait.effect.regenRate ?? 0;
+  const reflectRate = playerTrait.effect.reflectRate ?? 0;
   let endureUsed = false; // 特性「不屈」の発動フラグ
 
   const playerSize = getDinoSize(player);
@@ -152,11 +156,11 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
   const playerSizeMult = getSizeDamageMultiplier(playerSize, enemySize);
   const enemySizeMult = getSizeDamageMultiplier(enemySize, playerSize);
 
-   // 👇 体格補正 × タイプ相性 × 海エリア地形補正 をすべて反映
+  // 体格補正 × タイプ相性 × 海エリア地形補正 × 特性「鉄壁」を反映
   let playerAtk = Math.max(1, Math.floor(playerStats.atk * playerSizeMult * pMatchup * pTerrain));
-  const enemyAtk = Math.max(1, Math.floor(enemy.baseAtk * enemySizeMult * eMatchup * eTerrain));
+  const enemyAtk = Math.max(1, Math.floor(enemy.baseAtk * enemySizeMult * eMatchup * eTerrain * damageTakenMult));
 
-  // 👇 素早さにも海エリア地形補正を反映
+  // 素早さにも海エリア地形補正を反映
   const playerSpd = playerStats.spd * pTerrain;
   const enemySpd = enemy.baseSpd * eTerrain;
   
@@ -168,12 +172,14 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
 
   addLog(`⚔️ ${enemy.name} (Lv${enemy.huntLevel}) と遭遇`);
 
+  if (damageTakenMult < 1) {
+    addLog(`🛡️ 特性【鉄壁】により受けるダメージを ${Math.round((1 - damageTakenMult) * 100)}% 軽減！`);
+  }
   if (playerSizeMult > 1) {
     addLog(`📏 体格で勝っている！（与ダメージ ${Math.round(playerSizeMult * 100)}%）`);
   } else if (playerSizeMult < 1) {
     addLog(`📏 相手の方が大きい…（与ダメージ ${Math.round(playerSizeMult * 100)}%）`);
   }
-
   if (isCritical) {
     addLog("⚠️ 瀕死状態のため攻撃力低下");
   }
@@ -184,17 +190,44 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
     turns++;
 
     if (playerFirst) {
+      // 1. プレイヤーの攻撃
       enemyHp = performAttack(player.name, playerAtk, playerSpd, enemy.name, enemyHp, enemySpd, addLog, 0, enemy.baseHp, true);
       if (enemyHp <= 0) break;
 
+      // 2. 敵の攻撃
+      const prevHp = playerHp;
       playerHp = performAttack(enemy.name, enemyAtk, enemySpd, player.name, playerHp, playerSpd, addLog, playerDodgeBonus);
+      const takenDmg = prevHp - playerHp;
+
+      // 特性「棘の甲羅」のダメージ反射
+      if (takenDmg > 0 && reflectRate > 0) {
+        const reflectDmg = Math.max(1, Math.floor(takenDmg * reflectRate));
+        enemyHp -= reflectDmg;
+        addLog(`🦔 特性【棘の甲羅】で ${reflectDmg} の反射ダメージを与えた！`);
+        if (enemyHp <= 0) break;
+      }
+
+      // 特性「不屈」の発動チェック
       if (playerHp <= 0 && playerTrait.effect.endure && !endureUsed) {
         playerHp = 1;
         endureUsed = true;
         addLog(`❤️‍🔥 ${player.name} は特性【不屈】で致死ダメージをHP1で耐えた！`);
       }
     } else {
+      // 1. 敵の攻撃
+      const prevHp = playerHp;
       playerHp = performAttack(enemy.name, enemyAtk, enemySpd, player.name, playerHp, playerSpd, addLog, playerDodgeBonus);
+      const takenDmg = prevHp - playerHp;
+
+      // 特性「棘の甲羅」のダメージ反射
+      if (takenDmg > 0 && reflectRate > 0) {
+        const reflectDmg = Math.max(1, Math.floor(takenDmg * reflectRate));
+        enemyHp -= reflectDmg;
+        addLog(`🦔 特性【棘の甲羅】で ${reflectDmg} の反射ダメージを与えた！`);
+        if (enemyHp <= 0) break;
+      }
+
+      // 特性「不屈」の発動チェック
       if (playerHp <= 0 && playerTrait.effect.endure && !endureUsed) {
         playerHp = 1;
         endureUsed = true;
@@ -202,7 +235,16 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
       }
       if (playerHp <= 0) break;
 
+      // 2. プレイヤーの攻撃
       enemyHp = performAttack(player.name, playerAtk, playerSpd, enemy.name, enemyHp, enemySpd, addLog, 0, enemy.baseHp, true);
+      if (enemyHp <= 0) break;
+    }
+
+    // ターン終了時の特性「再生」回復
+    if (playerHp > 0 && enemyHp > 0 && regenRate > 0 && playerHp < playerStats.hp) {
+      const heal = Math.max(1, Math.floor(playerStats.hp * regenRate));
+      playerHp = Math.min(playerStats.hp, playerHp + heal);
+      addLog(`💚 特性【再生】でHPが ${heal} 回復した！`);
     }
   }
 

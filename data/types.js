@@ -28,9 +28,9 @@ export function getTypeMatchupMultiplier(attackerTypeId, defenderTypeId) {
   if (attackerTypeId === "herbivore" && defenderTypeId === "pterosaur") return 1.3;
   if (attackerTypeId === "pterosaur" && defenderTypeId === "carnivore") return 1.3;
 
-  if (attackerTypeId === "herbivore" && defenderTypeId === "carnivore") return 0.75;
-  if (attackerTypeId === "pterosaur" && defenderTypeId === "herbivore") return 0.75;
-  if (attackerTypeId === "carnivore" && defenderTypeId === "pterosaur") return 0.75;
+  if (attackerTypeId === "herbivore" && defenderTypeId === "carnivore") return 0.6;
+  if (attackerTypeId === "pterosaur" && defenderTypeId === "herbivore") return 0.6;
+  if (attackerTypeId === "carnivore" && defenderTypeId === "pterosaur") return 0.6;
 
   return 1.0;
 }

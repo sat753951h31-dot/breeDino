@@ -11,7 +11,8 @@ import { SPECIAL_BREEDS } from "./data/specialBreeding.js";
 import { ACHIEVEMENTS } from "./data/achievements.js";
 import { getEggRarityLabel, getSizeLabel, getRarityLabel, getColorLabel } from "./ui/labels.js";
 import { TREASURES, MAX_TREASURE_LEVEL, getTreasureDesc } from "./data/treasures.js";
-import { getTraitData } from "./data/traits.js";
+import * as traitModule from "./data/traits.js";
+const { getTraitData } = traitModule;
 import { AREA_BOSSES } from "./data/bosses.js";
 import { AREA_EXPEDITIONS } from "./data/expeditions.js";
 import { playExploreSequence } from "./ui/battleStage.js";
@@ -1966,6 +1967,92 @@ document.addEventListener("click", (e) => {
 
   e.stopPropagation();
   alert(`【特性】${badge.dataset.traitName}\n\n効果：${badge.dataset.traitDesc}`);
+});
+
+// 📊 タイプ相性ボタンのポップアップ表示（スマホ・PC共通）
+document.getElementById("typeChartBtn")?.addEventListener("click", () => {
+  alert(
+    `📊 【タイプ相性 ＆ 地形ルール】\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `🔄 三すくみ相性\n` +
+    `🍖 肉食 ＞ 🌿 草食 ＞ 🦅 翼竜 ＞ 🍖 肉食\n\n` +
+    `・有利タイプ：与ダメージ 1.3倍 ＆ 被ダメージ 40%軽減\n` +
+    `・不利タイプ：与ダメージ 0.6倍 ＆ 被ダメージ 1.3倍\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `🌊 海生タイプ ＆ 海エリア補正\n` +
+    `・🌊 海生タイプは三すくみの影響を受けません\n` +
+    `・海エリア：🌊 海生は能力 1.35倍 ／ 海生以外は 0.75倍\n` +
+    `・陸エリア：🌊 海生は能力 0.75倍`
+  );
+});
+
+// 📖 早見表モーダル制御（特性一覧 ＆ 特殊交配レシピ）
+const guideModal = document.getElementById("guideModal");
+const guideModalTitle = document.getElementById("guideModalTitle");
+const guideModalBody = document.getElementById("guideModalBody");
+
+function openGuideModal(title, html) {
+  if (!guideModal || !guideModalTitle || !guideModalBody) return;
+  guideModalTitle.textContent = title;
+  guideModalBody.innerHTML = html;
+  guideModalBody.scrollTop = 0;
+  guideModal.style.display = "flex";
+}
+
+// ✨ 特性一覧ボタン（探索タブ・交配タブ共通）
+document.querySelectorAll(".js-open-traits").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const rawTraits = traitModule.TRAITS ?? traitModule.default ?? {};
+    const traitList = Array.isArray(rawTraits) ? rawTraits : Object.values(rawTraits);
+
+    const listHtml = traitList.map(t => `
+      <div class="guide-item">
+        <div class="guide-item-title">${t.icon ?? "✨"} <strong>${t.name}</strong></div>
+        <div class="guide-item-desc">${t.desc}</div>
+      </div>
+    `).join("");
+
+    openGuideModal(`✨ 特性一覧（全${traitList.length}種）`, listHtml);
+  });
+});
+
+// 🧬 特殊交配レシピボタン
+document.getElementById("recipeListBtn")?.addEventListener("click", () => {
+  const discovered = game.discoveredSpecies ?? [];
+  const foundCount = SPECIAL_BREEDS.filter(b => discovered.includes(b.result.id)).length;
+
+  const listHtml = SPECIAL_BREEDS.map((b, idx) => {
+    const parent1 = getDefaultSpeciesName(b.parents[0]);
+    const parent2 = getDefaultSpeciesName(b.parents[1]);
+    const isFound = discovered.includes(b.result.id);
+    const resultName = isFound ? `✨ ${b.result.name}` : "❔ 未発見の特殊種";
+
+    return `
+      <div class="guide-item ${isFound ? "is-discovered" : ""}">
+        <div class="guide-recipe-row">
+          <span class="guide-no">#${String(idx + 1).padStart(2, "0")}</span>
+          <span class="guide-parents"><strong>${parent1}</strong> × <strong>${parent2}</strong></span>
+        </div>
+        <div class="guide-result">➡ <strong>${resultName}</strong></div>
+      </div>
+    `;
+  }).join("");
+
+  openGuideModal(
+    `🧬 特殊交配レシピ（発見済: ${foundCount} / ${SPECIAL_BREEDS.length}種）`,
+    listHtml
+  );
+});
+
+// 早見表モーダルを閉じる（閉じるボタン ＆ 背景タップ）
+document.getElementById("guideCloseTopBtn")?.addEventListener("click", () => {
+  if (guideModal) guideModal.style.display = "none";
+});
+
+guideModal?.addEventListener("click", (e) => {
+  if (e.target === guideModal) {
+    guideModal.style.display = "none";
+  }
 });
 
 // 1秒ごとのHP自動回復とタイマー更新

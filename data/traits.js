@@ -54,6 +54,35 @@ export const TRAITS = [
     name: "幸運",
     desc: "探索での卵・生命の結晶・秘宝のドロップ率がそれぞれ +10% 上昇",
     effect: { dropBonus: 0.10 }
+  },
+  // 👇 配列形式（export const TRAITS = [ ... ]）の場合の追加コード
+  {
+    id: "iron_wall",
+    icon: "🛡️",
+    name: "鉄壁",
+    desc: "受けるダメージを 25% 軽減する",
+    effect: {
+      damageTakenMult: 0.75
+    }
+  },
+  {
+    id: "regeneration",
+    icon: "💚",
+    name: "再生",
+    desc: "戦闘中、毎ターン終了時に最大HPの 6% を回復する",
+    effect: {
+      regenRate: 0.06
+    }
+  },
+  {
+    id: "thorns",
+    icon: "🦔",
+    name: "棘の甲羅",
+    desc: "最大HP +15% ＆ 被ダメージの 25% を相手に反射する",
+    effect: {
+      hpMult: 0.15,
+      reflectRate: 0.25
+    }
   }
 ];
 
