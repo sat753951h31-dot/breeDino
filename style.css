@@ -3531,3 +3531,39 @@ button{
     width: 100%;
   }
 }
+
+/* =========================================
+   ミュータント個体のオーラ演出（顔被り解消）
+========================================= */
+@keyframes mutantAuraPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 3px #e040fb) drop-shadow(0 0 7px #7c4dff);
+  }
+  50% {
+    filter: drop-shadow(0 0 6px #00e5ff) drop-shadow(0 0 12px #d500f9);
+  }
+}
+
+/* 恐竜本体に神秘的なエネルギーオーラをまとわせる */
+.dino-avatar-box.is-mutant-aura .dino-svg {
+  animation: mutantAuraPulse 2.2s infinite ease-in-out;
+}
+
+/* カード表示時は、頭（右上）ではなく尻尾側の左下に小さく配置 */
+.dino-avatar-box .avatar-mutant-spark {
+  top: auto !important;
+  right: auto !important;
+  bottom: 4px !important;
+  left: 6px !important;
+  font-size: 0.78em !important;
+  background: rgba(74, 20, 140, 0.82);
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: 999px;
+  box-shadow: 0 0 6px rgba(224, 64, 251, 0.7);
+}
+
+/* 戦闘ステージ内ではバッジを非表示にしてオーラ演出のみにする */
+.battle-stage .avatar-mutant-spark {
+  display: none !important;
+}
