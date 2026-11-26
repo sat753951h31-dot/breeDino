@@ -49,6 +49,8 @@ function getBloodlineBonus(dino) {
 // ログの文言から色分け用のCSSクラスを自動判定する関数
 function getLogClass(text) {
   if (text.startsWith("===")) return "log-divider";
+  if (text.includes("🔴")) return "log-enemy-low";  // 敵HP 25%以下（赤）
+  if (text.includes("🟠")) return "log-enemy-half"; // 敵HP 50%以下（オレンジ）
   if (text.includes("☠️") || text.includes("🪦") || text.includes("❌") || text.includes("❗") || text.includes("⚠️")) {
     return "log-danger"; // 敗北・死亡・瀕死警告（赤）
   }
@@ -187,7 +189,7 @@ function renderActiveDino(game) {
         <span class="badge-type type-${dinoType.id}" title="${dinoType.desc}">${dinoType.icon} ${dinoType.name}</span>
         ${bloodlineBonus > 0 ? `<span class="badge-bloodline">📈上限+${bloodlineBonus}</span>` : ""}
         <span class="badge-rarity">${getRarityLabel(activeDino.rarityType)}</span>
-        <span class="badge-trait" title="${trait.desc}">${trait.icon} ${trait.name}</span>
+        <span class="badge-trait" title="${trait.desc}" data-trait-name="${trait.icon} ${trait.name}" data-trait-desc="${trait.desc}">${trait.icon} ${trait.name}</span>
         ${activeDino.mutant ? `<span class="badge-mutant">🧬 MUTANT</span>` : ""}
         <h3>${activeDino.name} <small>${getSexLabel(activeDino.sex)}</small></h3>
       </div>
@@ -225,6 +227,10 @@ function renderActiveDino(game) {
       <div class="stat-item"><span>💨 素早さ</span><strong>${Math.floor(stats.spd)}</strong></div>
       <div class="stat-item"><span>📏 体格</span><strong>${getSizeLabel(activeDino.size)}</strong></div>
       <div class="stat-item"><span>🎨 体色</span><strong>${getColorLabel(activeDino.color)}</strong></div>
+    </div>
+
+    <div class="active-trait-desc">
+      <strong>${trait.icon} ${trait.name}：</strong>${trait.desc}
     </div>
   `;
 }
@@ -486,7 +492,7 @@ function renderDinoList(game, state, handlers) {
           <span class="badge-type type-${dinoType.id}" title="${dinoType.desc}">${dinoType.icon} ${dinoType.name}</span>
           ${bloodlineBonus > 0 ? `<span class="badge-bloodline">📈上限+${bloodlineBonus}</span>` : ""}
           <span class="badge-rarity">${getRarityLabel(dino.rarityType)}</span>
-          <span class="badge-trait" title="${trait.desc}">${trait.icon} ${trait.name}</span>
+          <span class="badge-trait" title="${trait.desc}" data-trait-name="${trait.icon} ${trait.name}" data-trait-desc="${trait.desc}">${trait.icon} ${trait.name}</span>
           ${dino.mutant ? `<span class="badge-mutant">🧬MUTANT</span>` : ""}
         </div>
         <div class="card-lv">Lv.<strong>${dino.level}</strong><small>/${maxLv}</small></div>
@@ -989,7 +995,7 @@ function createParentSlotHtml(dino, roleLabel, roleClass) {
         <span>F${dino.generation ?? 0}</span>
         ${bloodlineBonus > 0 ? `<span class="badge-bloodline">📈上限+${bloodlineBonus}</span>` : ""}
         <span>${getRarityLabel(dino.rarityType)}</span>
-        <span class="badge-trait" title="${trait.desc}">${trait.icon} ${trait.name}</span>
+        <span class="badge-trait" title="${trait.desc}" data-trait-name="${trait.icon} ${trait.name}" data-trait-desc="${trait.desc}">${trait.icon} ${trait.name}</span>
         <span>${getColorLabel(dino.color)}</span>
         ${dino.mutant ? `<span class="badge-mutant">🧬MUTANT</span>` : ""}
       </div>
@@ -1365,7 +1371,7 @@ function renderExpeditionTab(game, handlers) {
         <div class="card-badges">
           <span class="badge-gen">F${dino.generation ?? 0}</span>
           <span class="badge-rarity">${getRarityLabel(dino.rarityType)}</span>
-          <span class="badge-trait ${isLucky ? "is-lucky-highlight" : ""}" title="${trait.desc}">
+          <span class="badge-trait ${isLucky ? "is-lucky-highlight" : ""}" title="${trait.desc}" data-trait-name="${trait.icon} ${trait.name}" data-trait-desc="${trait.desc}">
             ${trait.icon} ${trait.name}
           </span>
         </div>

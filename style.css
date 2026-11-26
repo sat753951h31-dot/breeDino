@@ -2994,6 +2994,35 @@ button{
   white-space: nowrap;
 }
 
+/* 特性バッジをタップ可能と分かりやすくする */
+.badge-trait {
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+/* メイン相棒カードの特性説明ボックス */
+.active-trait-desc {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background-color: #f1f8e9;
+  border: 1px solid #c5e1a5;
+  font-size: 0.83em;
+  color: #33691e;
+  line-height: 1.4;
+}
+
+/* 敵HP割合に応じたダメージログの色変化 */
+.log-line.log-enemy-half {
+  color: #e65100;
+  font-weight: bold;
+}
+
+.log-line.log-enemy-low {
+  color: #d32f2f;
+  font-weight: bold;
+}
 
 /* =========================================
    スマホ用：検索・絞り込みバーの2列折り返し修正

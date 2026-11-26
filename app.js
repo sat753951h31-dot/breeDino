@@ -1959,6 +1959,15 @@ document.getElementById("backupCloseBtn")?.addEventListener("click", () => {
   backupModal.style.display = "none";
 });
 
+// 特性バッジをタップしたときに効果説明を表示（スマホ対応）
+document.addEventListener("click", (e) => {
+  const badge = e.target.closest(".badge-trait[data-trait-desc]");
+  if (!badge) return;
+
+  e.stopPropagation();
+  alert(`【特性】${badge.dataset.traitName}\n\n効果：${badge.dataset.traitDesc}`);
+});
+
 // 1秒ごとのHP自動回復とタイマー更新
 setInterval(() => {
   tickCounter++;

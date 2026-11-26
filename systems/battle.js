@@ -79,15 +79,27 @@ export function getEnemyForHunt(areaLevel) {
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
-// performAttack に dodgeBonus 引数を追加
-function performAttack(attackerName, atk, atkSpd, defenderName, defenderHp, defSpd, addLog, dodgeBonus = 0) {
+function performAttack(attackerName, atk, atkSpd, defenderName, defenderHp, defSpd, addLog, dodgeBonus = 0, defMaxHp = 0, isPlayerAttack = false) {
   if (Math.random() < getDodgeChance(defSpd, atkSpd, dodgeBonus)) {
     addLog(`💨 ${defenderName} は素早く攻撃を回避した！`);
     return defenderHp;
   }
 
-  addLog(`💥 ${attackerName} の攻撃！ ${atk}ダメージ`);
-  return defenderHp - atk;
+  const nextHp = defenderHp - atk;
+
+  // プレイヤーの攻撃時のみ、敵の残りHP割合でログに色判定用のマークを付与
+  let statusMark = "";
+  if (isPlayerAttack && defMaxHp > 0 && nextHp > 0) {
+    const ratio = nextHp / defMaxHp;
+    if (ratio <= 0.25) {
+      statusMark = " 🔴"; // 残り25%以下
+    } else if (ratio <= 0.50) {
+      statusMark = " 🟠"; // 残り50%以下
+    }
+  }
+
+  addLog(`💥 ${attackerName} の攻撃！ ${atk}ダメージ${statusMark}`);
+  return nextHp;
 }
 
 export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea = false) {
@@ -172,11 +184,10 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
     turns++;
 
     if (playerFirst) {
-      enemyHp = performAttack(player.name, playerAtk, playerSpd, enemy.name, enemyHp, enemySpd, addLog, 0);
+      enemyHp = performAttack(player.name, playerAtk, playerSpd, enemy.name, enemyHp, enemySpd, addLog, 0, enemy.baseHp, true);
       if (enemyHp <= 0) break;
 
       playerHp = performAttack(enemy.name, enemyAtk, enemySpd, player.name, playerHp, playerSpd, addLog, playerDodgeBonus);
-      // 特性「不屈」の発動チェック
       if (playerHp <= 0 && playerTrait.effect.endure && !endureUsed) {
         playerHp = 1;
         endureUsed = true;
@@ -191,7 +202,7 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
       }
       if (playerHp <= 0) break;
 
-      enemyHp = performAttack(player.name, playerAtk, playerSpd, enemy.name, enemyHp, enemySpd, addLog, 0);
+      enemyHp = performAttack(player.name, playerAtk, playerSpd, enemy.name, enemyHp, enemySpd, addLog, 0, enemy.baseHp, true);
     }
   }
 
