@@ -3433,7 +3433,8 @@ button{
 
 /* 世代・レア度バッジもタップ可能と分かるようにする */
 .badge-gen[data-badge-desc],
-.badge-rarity[data-badge-desc] {
+.badge-rarity[data-badge-desc],
+.badge-mutant[data-badge-desc] {
   cursor: pointer;
   text-decoration: underline dotted;
   text-underline-offset: 2px;

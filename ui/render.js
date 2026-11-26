@@ -272,7 +272,7 @@ function renderActiveDino(game) {
         ${bloodlineBonus > 0 ? `<span class="badge-bloodline">📈上限+${bloodlineBonus}</span>` : ""}
         ${renderRarityBadge(activeDino)}
         <span class="badge-trait" title="${trait.desc}" data-trait-name="${trait.icon} ${trait.name}" data-trait-desc="${trait.desc}">${trait.icon} ${trait.name}</span>
-        ${activeDino.mutant ? `<span class="badge-mutant">🧬 MUTANT</span>` : ""}
+        ${renderMutantBadge(activeDino)}
         <h3>${activeDino.name} <small>${getSexLabel(activeDino.sex)}</small></h3>
       </div>
       <div class="partner-level">Lv.<span>${activeDino.level}</span><small>/${maxLv}</small></div>
@@ -577,7 +577,7 @@ function renderDinoList(game, state, handlers) {
           ${bloodlineBonus > 0 ? `<span class="badge-bloodline">📈上限+${bloodlineBonus}</span>` : ""}
           ${renderRarityBadge(dino)}
           <span class="badge-trait" title="${trait.desc}" data-trait-name="${trait.icon} ${trait.name}" data-trait-desc="${trait.desc}">${trait.icon} ${trait.name}</span>
-          ${dino.mutant ? `<span class="badge-mutant">🧬MUTANT</span>` : ""}
+          ${renderMutantBadge(dino)}
         </div>
         <div class="card-lv">Lv.<strong>${dino.level}</strong><small>/${maxLv}</small></div>
       </div>
@@ -1099,7 +1099,7 @@ function createParentSlotHtml(dino, roleLabel, roleClass) {
         ${renderRarityBadge(dino)}
         <span class="badge-trait" title="${trait.desc}" data-trait-name="${trait.icon} ${trait.name}" data-trait-desc="${trait.desc}">${trait.icon} ${trait.name}</span>
         <span>${getColorLabel(dino.color)}</span>
-        ${dino.mutant ? `<span class="badge-mutant">🧬MUTANT</span>` : ""}
+        ${renderMutantBadge(dino)}
       </div>
       <div class="slot-ivs">
         ATK IV: <strong>${dino.atkIv}</strong> /
@@ -1726,7 +1726,7 @@ function renderGachaTab(game, state, handlers) {
                   data-trait-name="${trait.icon} ${trait.name}"
                   data-trait-desc="${trait.desc}"
                 >${trait.icon} ${trait.name}</span>
-                ${dino.mutant ? `<span class="badge-mutant">🧬MUTANT</span>` : ""}
+                ${renderMutantBadge(dino)}
               </div>
               <div class="card-lv">Lv.1<small>/${dino.maxLevel}</small></div>
             </div>
@@ -1755,6 +1755,18 @@ function renderGachaTab(game, state, handlers) {
       }).join("")}
     </div>
   `;
+}
+
+// ミュータントバッジ（タップで突然変異の説明を表示）
+function renderMutantBadge(dino) {
+  if (!dino?.mutant) return "";
+
+  const desc =
+    `・突然変異によって誕生した希少な覚醒個体です！\n` +
+    `・通常の上限（IV 100）を超える高い個体値（最大150）や特別なオーラを宿しています。\n` +
+    `・交配の親にすると、その高い個体値を次世代へ引き継ぐことができます。`;
+
+  return `<span class="badge-mutant" data-badge-title="🧬 突然変異【MUTANT】" data-badge-desc="${desc}">🧬 MUTANT</span>`;
 }
 
 // 全体描画のエントリーポイント
