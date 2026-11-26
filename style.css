@@ -3533,6 +3533,52 @@ button{
 }
 
 /* =========================================
+   スマホ用：貴重品カード・ボタンの右端切れ防止
+========================================= */
+.special-food-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.special-food-grid .food-card {
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 8px 6px;
+}
+
+.special-food-grid .food-name {
+  font-size: 0.85em;
+  word-break: keep-all;
+}
+
+.special-food-grid .btn-use-special {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 6px 4px;
+  margin-top: 4px;
+}
+
+.card-special-feed-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.btn-card-special {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 2px;
+  font-size: 0.75em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================================
    ミュータント個体のオーラ演出（顔被り解消）
 ========================================= */
 @keyframes mutantAuraPulse {
@@ -3566,4 +3612,30 @@ button{
 /* 戦闘ステージ内ではバッジを非表示にしてオーラ演出のみにする */
 .battle-stage .avatar-mutant-spark {
   display: none !important;
+}
+
+/* =========================================
+   貴重品カード内の表示を完全中央揃えに修正
+========================================= */
+.special-food-grid .food-card.is-special-item {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+  padding: 10px 8px;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.special-food-grid .food-card.is-special-item > div {
+  width: 100%;
+  text-align: center;
+}
+
+.special-food-grid .food-card.is-special-item .btn-use-special {
+  display: block;
+  width: 100%;
+  margin: 6px 0 0 0;
+  text-align: center;
 }

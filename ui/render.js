@@ -1770,9 +1770,9 @@ export function renderGame(game, state, handlers) {
   });
 
   const fruitBtn = document.getElementById("useTraitFruitBtn");
-  if (fruitBtn) fruitBtn.onclick = handlers.onUseTraitFruit;
+  if (fruitBtn) fruitBtn.onclick = () => handlers.onUseTraitFruit();
 
   const elixirBtn = document.getElementById("useIvElixirBtn");
-  if (elixirBtn) elixirBtn.onclick = handlers.onUseIvElixir;
+  if (elixirBtn) elixirBtn.onclick = () => handlers.onUseIvElixir();
 
 }

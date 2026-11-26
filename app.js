@@ -1816,8 +1816,8 @@ const handlers = {
   onUpgradeMonument: handleUpgradeMonument,
   onCraftItem: handleCraftItem,
   onRollGacha: (times, isPremium = false) => handleRollGacha(times, isPremium),
-  onUseTraitFruit: (dinoId) => handleUseTraitFruit(dinoId ?? game.activeDinoId),
-  onUseIvElixir: (dinoId) => handleUseIvElixir(dinoId ?? game.activeDinoId),
+  onUseTraitFruit: (dinoId) => handleUseTraitFruit(typeof dinoId === "string" ? dinoId : game.activeDinoId),
+  onUseIvElixir: (dinoId) => handleUseIvElixir(typeof dinoId === "string" ? dinoId : game.activeDinoId),
   onSetActive: (dinoId) => {
     if (getBusyExpeditionDinoIds().has(dinoId)) {
       alert("🏕️ 遠征中の恐竜は育成パートナーに設定できません！帰還を待ってください。");
