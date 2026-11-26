@@ -70,6 +70,14 @@ export function loadGame() {
     save.facility.trainingLevel ??= 0;
     save.facility.kitchenLevel ??= 0;
     save.facility.arenaLevel ??= 0;
+    save.facility.monumentLevel ??= 0;
+    save.items ??= {};
+    save.items.traitFruit ??= 0;
+    save.items.ivElixir ??= 0;
+    save.stats.itemsCrafted ??= 0;
+    save.stats.itemsUsed ??= 0;
+    save.stats.gachaRolls ??= 0;
+
     save.worldLoop ??= 1;
     save.stats.maxWorldLoop ??= 1;
 
@@ -126,11 +134,17 @@ export function loadGame() {
     expeditionDraft: { areaLevel: 1, memberIds: [] },
     materials: { wood: 0, stone: 0, ore: 0 },
     worldLoop: 1,
+    traitFruit: 0,
+    ivElixir: 0,
+    itemsCrafted: 0,
+    itemsUsed: 0,
+    gachaRolls: 0,
     facility: {
       incubatorLevel: 0,
       trainingLevel: 0,
       kitchenLevel: 0,
-      arenaLevel: 0
+      arenaLevel: 0,
+      monumentLevel: 0,
     },
     items: {
       breedCrystal: 1

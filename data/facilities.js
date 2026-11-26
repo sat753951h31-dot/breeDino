@@ -59,6 +59,54 @@ export const FACILITIES = [
   }
 ];
 
+// 🔨 古代工房のクラフトレシピ
+export const CRAFT_RECIPES = [
+  {
+    id: "craft_crystal",
+    icon: "💎",
+    name: "生命の結晶 ×3",
+    desc: "生命の結晶を精製する",
+    cost: { wood: 15, stone: 8 },
+    costText: "🪵 木材×15 ＋ 🪨 石材×8"
+  },
+  {
+    id: "craft_premium_meat",
+    icon: "✨",
+    name: "極上肉 ×5",
+    desc: "余った木材と生肉を燻製して極上肉に仕上げる",
+    cost: { wood: 10, raw: 20 },
+    costText: "🪵 木材×10 ＋ 🍖 生肉×20"
+  },
+  {
+    id: "craft_trait_fruit",
+    icon: "🎲",
+    name: "特性変更の果実 ×1",
+    desc: "恐竜の「特性」をランダムに再抽選する",
+    cost: { stone: 20, ore: 5 },
+    costText: "🪨 石材×20 ＋ 🔮 鉱石×5"
+  },
+  {
+    id: "craft_iv_elixir",
+    icon: "💉",
+    name: "個体値強化の秘薬 ×1",
+    desc: "恐竜の個体値（ATK・HP・SPD IV）をすべて +10 する（上限100）",
+    cost: { stone: 25, ore: 10 },
+    costText: "🪨 石材×25 ＋ 🔮 鉱石×10"
+  }
+];
+
+// 🗿 古代のモニュメント（無限強化）の次の強化コスト計算
+export function getMonumentUpgradeCost(currentLv = 0) {
+  const nextLv = currentLv + 1;
+  return {
+    nextLv,
+    wood: 15 + currentLv * 5,
+    stone: 10 + currentLv * 4,
+    ore: 3 + Math.floor(currentLv * 1.5),
+    costText: `🪵 木材×${15 + currentLv * 5} ＋ 🪨 石材×${10 + currentLv * 4} ＋ 🔮 鉱石×${3 + Math.floor(currentLv * 1.5)}`
+  };
+}
+
 export const MAX_FACILITY_LEVEL = 5;
 
 // 現在の設備ボーナスをまとめて取得するヘルパー
@@ -73,13 +121,16 @@ export function getFacilityBonuses(facility = {}) {
   const kitInfo = kitDef?.levels.find(l => l.level === (facility.kitchenLevel ?? 0));
   const arnInfo = arnDef?.levels.find(l => l.level === (facility.arenaLevel ?? 0));
 
+  const monumentLv = facility.monumentLevel ?? 0;
+
   return {
     hatchTimeMult: incInfo ? Math.max(0.1, 1 - incInfo.val) : 1.0,
     standbyExp: trnInfo ? trnInfo.standbyExp : 0,
     expMult: trnInfo ? trnInfo.expMult : 0,
     foodExpMult: kitInfo ? kitInfo.foodExpMult : 0,
     healBonus: kitInfo ? kitInfo.healBonus : 0,
-    statMult: arnInfo ? arnInfo.statMult : 0
+    // 闘技場（最大+25%） ＋ モニュメント（Lv1ごとに+2%・上限なし）
+    statMult: (arnInfo ? arnInfo.statMult : 0) + (monumentLv * 0.02)
   };
 }
 

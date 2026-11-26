@@ -17,7 +17,7 @@ import { getChildMaxLevelInfo, calculateChildMaxLevel, getRequiredCrystals } fro
 import { TREASURES, MAX_TREASURE_LEVEL, getTreasureDesc } from "../data/treasures.js";
 import { getTraitData } from "../data/traits.js";
 import { AREA_BOSSES } from "../data/bosses.js";
-import { FACILITIES, FACILITY_MATERIALS, MAX_FACILITY_LEVEL } from "../data/facilities.js";
+import { FACILITIES, FACILITY_MATERIALS, MAX_FACILITY_LEVEL, CRAFT_RECIPES, getMonumentUpgradeCost } from "../data/facilities.js";
 import { renderDinoAvatar } from "./dinoVisual.js";
 import { AREA_EXPEDITIONS } from "../data/expeditions.js";
 import { updateIdleStage } from "./battleStage.js";
@@ -44,6 +44,54 @@ function getBloodlineBonus(dino) {
   const gen = dino.generation ?? 0;
   const maxLv = dino.maxLevel ?? (20 + gen * 5);
   return Math.max(0, maxLv - (20 + gen * 5));
+}
+
+// 世代バッジ（タップで世代固定値・レベル上限を表示）
+function renderGenBadge(dino) {
+  const gen = dino.generation ?? 0;
+  const genBaseMax = 20 + gen * 5;
+  const maxAllowedBonus = gen * 10;
+  const maxLv = dino.maxLevel ?? genBaseMax;
+  const currentBonus = Math.max(0, maxLv - genBaseMax);
+
+  // 実際の計算式から世代のステータス固定倍率を算出
+  const baseAtk = calculateStats({ ...dino, generation: 0 }).atk;
+  const curAtk = calculateStats(dino).atk;
+  const genMult = baseAtk > 0 ? (curAtk / baseAtk) : 1;
+  const multPercent = Math.round((genMult - 1) * 100);
+
+  const desc =
+    `・世代ステータス倍率：${genMult.toFixed(2)}倍（+${multPercent}%）\n` +
+    `・現在のレベル上限：Lv.${maxLv}\n` +
+    `　（F${gen}基本 Lv.${genBaseMax} ＋ 継承ボーナス +${currentBonus}）\n` +
+    `・F${gen}の最大上限目安：Lv.${genBaseMax + maxAllowedBonus}（ボーナス上限 +${maxAllowedBonus}）`;
+
+  return `<span class="badge-gen" data-badge-title="🧬 世代情報【F${gen}】" data-badge-desc="${desc}">F${gen}</span>`;
+}
+
+// レア度バッジ（タップでレア度倍率・説明を表示）
+function renderRarityBadge(dino) {
+  const rarity = dino.rarityType ?? "white";
+  const label = getRarityLabel(rarity);
+
+  // 実際の計算式からレア度のステータス倍率を算出
+  const whiteAtk = calculateStats({ ...dino, rarityType: "white" }).atk;
+  const curAtk = calculateStats(dino).atk;
+  const rarityMult = whiteAtk > 0 ? (curAtk / whiteAtk) : 1;
+  const multPercent = Math.round((rarityMult - 1) * 100);
+
+  const noteMap = {
+    white: "最も標準的なレア度です。交配のベースや素材集めに活躍します。",
+    blue: "基本能力が少し高い希少個体です。序盤〜中盤の主力に向いています。",
+    purple: "非常に高い基礎能力を持つ上位個体です。交配の親としても優秀です。",
+    rainbow: "最高峰のステータス倍率を誇る伝説級の個体です！"
+  };
+
+  const desc =
+    `・レア度ステータス倍率：${rarityMult.toFixed(2)}倍（+${multPercent}%）\n` +
+    `・特徴：${noteMap[rarity] ?? ""}`;
+
+  return `<span class="badge-rarity" data-badge-title="✨ レア度情報【${label}】" data-badge-desc="${desc}">${label}</span>`;
 }
 
 // ログの文言から色分け用のCSSクラスを自動判定する関数
@@ -127,6 +175,9 @@ function renderStatusAndLogs(game, selectedMale, selectedFemale) {
       { type: "premium", icon: "✨", name: "極上肉", count: game.foods.premium, desc: "HP全快 / EXP+100" }
     ];
 
+    const fruitCount = game.items?.traitFruit ?? 0;
+    const elixirCount = game.items?.ivElixir ?? 0;
+
     foodStorage.innerHTML = `
       <div class="food-grid">
         ${foodItems.map(item => `
@@ -145,6 +196,37 @@ function renderStatusAndLogs(game, selectedMale, selectedFemale) {
             </button>
           </div>
         `).join("")}
+      </div>
+
+      <!-- 👇 下段：貴重品（特性変更の果実 ＆ 個体値強化の秘薬） -->
+      <div class="special-food-grid">
+        <div class="food-card is-special-item ${fruitCount <= 0 ? "is-empty" : ""}">
+          <div class="food-icon">🎲</div>
+          <div class="food-name">特性変更の果実</div>
+          <div class="food-count">所持: <strong>${fruitCount}</strong>個</div>
+          <div class="food-desc">特性をランダム再抽選</div>
+          <button
+            id="useTraitFruitBtn"
+            class="btn-use-special"
+            ${!activeId || fruitCount <= 0 ? "disabled" : ""}
+          >
+            使う
+          </button>
+        </div>
+
+        <div class="food-card is-special-item ${elixirCount <= 0 ? "is-empty" : ""}">
+          <div class="food-icon">💉</div>
+          <div class="food-name">個体値強化の秘薬</div>
+          <div class="food-count">所持: <strong>${elixirCount}</strong>個</div>
+          <div class="food-desc">全個体値IV +10 (上限100)</div>
+          <button
+            id="useIvElixirBtn"
+            class="btn-use-special"
+            ${!activeId || elixirCount <= 0 ? "disabled" : ""}
+          >
+            使う
+          </button>
+        </div>
       </div>
     `;
   }
@@ -185,10 +267,10 @@ function renderActiveDino(game) {
   el.innerHTML = `
     <div class="partner-header">
       <div>
-        <span class="badge-gen">F${activeDino.generation ?? 0}</span>
+        ${renderGenBadge(activeDino)}
         <span class="badge-type type-${dinoType.id}" title="${dinoType.desc}">${dinoType.icon} ${dinoType.name}</span>
         ${bloodlineBonus > 0 ? `<span class="badge-bloodline">📈上限+${bloodlineBonus}</span>` : ""}
-        <span class="badge-rarity">${getRarityLabel(activeDino.rarityType)}</span>
+        ${renderRarityBadge(activeDino)}
         <span class="badge-trait" title="${trait.desc}" data-trait-name="${trait.icon} ${trait.name}" data-trait-desc="${trait.desc}">${trait.icon} ${trait.name}</span>
         ${activeDino.mutant ? `<span class="badge-mutant">🧬 MUTANT</span>` : ""}
         <h3>${activeDino.name} <small>${getSexLabel(activeDino.sex)}</small></h3>
@@ -473,6 +555,8 @@ function renderDinoList(game, state, handlers) {
     const bloodlineBonus = getBloodlineBonus(dino);
     const trait = getTraitData(dino.trait);
     const dinoType = getDinoType(dino.speciesId, dino.name);
+    const fruitCount = game.items?.traitFruit ?? 0;
+    const elixirCount = game.items?.ivElixir ?? 0;
 
     const card = document.createElement("div");
     card.className = "dino-card";
@@ -488,10 +572,10 @@ function renderDinoList(game, state, handlers) {
       <!-- 上部バッジ＆レベル -->
       <div class="card-top-row">
         <div class="card-badges">
-          <span class="badge-gen">F${dino.generation ?? 0}</span>
+          ${renderGenBadge(dino)}
           <span class="badge-type type-${dinoType.id}" title="${dinoType.desc}">${dinoType.icon} ${dinoType.name}</span>
           ${bloodlineBonus > 0 ? `<span class="badge-bloodline">📈上限+${bloodlineBonus}</span>` : ""}
-          <span class="badge-rarity">${getRarityLabel(dino.rarityType)}</span>
+          ${renderRarityBadge(dino)}
           <span class="badge-trait" title="${trait.desc}" data-trait-name="${trait.icon} ${trait.name}" data-trait-desc="${trait.desc}">${trait.icon} ${trait.name}</span>
           ${dino.mutant ? `<span class="badge-mutant">🧬MUTANT</span>` : ""}
         </div>
@@ -576,6 +660,15 @@ function renderDinoList(game, state, handlers) {
         </button>
       </div>
 
+      <div class="card-special-feed-row">
+        <button class="btn-card-special use-fruit-card-btn" data-id="${dino.uid}" ${fruitCount <= 0 ? "disabled" : ""} title="特性変更の果実（特性を再抽選）">
+          🎲 果実 (${fruitCount})
+        </button>
+        <button class="btn-card-special use-elixir-card-btn" data-id="${dino.uid}" ${elixirCount <= 0 ? "disabled" : ""} title="個体値強化の秘薬（全IV +10）">
+          💉 秘薬 (${elixirCount})
+        </button>
+      </div>
+
       <!-- メイン設定＆交配選択ボタン -->
       <div class="card-action-row">
         <button class="set-active-btn" data-id="${dino.uid}" ${isActive || isOnExpedition ? "disabled" : ""}>
@@ -617,6 +710,12 @@ function renderDinoList(game, state, handlers) {
   });
   el.querySelectorAll(".btn-pedigree").forEach(btn => {
     btn.onclick = () => handlers.onShowPedigree(btn.dataset.id);
+  });
+  el.querySelectorAll(".use-fruit-card-btn").forEach(btn => {
+    btn.onclick = () => handlers.onUseTraitFruit(btn.dataset.id);
+  });
+  el.querySelectorAll(".use-elixir-card-btn").forEach(btn => {
+    btn.onclick = () => handlers.onUseIvElixir(btn.dataset.id);
   });
 }
 
@@ -858,7 +957,10 @@ function renderRecords(game) {
     { icon: "🏕️", label: "遠征帰還数", value: `${s.expeditionsDone ?? 0} 回` },
     { icon: "👑", label: "到達最高世代", value: `F${s.maxGeneration}` },
     { icon: "👋", label: "お別れした数", value: `${s.dinosReleased} 体` },
-    { icon: "🪦", label: "探索ロスト数", value: `${s.dinosLost ?? 0} 体` }
+    { icon: "🪦", label: "探索ロスト数", value: `${s.dinosLost ?? 0} 体` },
+    { icon: "🔨", label: "工房クラフト回数", value: `${s.itemsCrafted ?? 0} 回` },
+    { icon: "🎲", label: "厳選アイテム使用数", value: `${s.itemsUsed ?? 0} 回` },
+    { icon: "🎰", label: "ガチャ召喚回数", value: `${s.gachaRolls ?? 0} 回` },
   ];
 
   recordGrid.innerHTML = records.map(r => `
@@ -992,9 +1094,9 @@ function createParentSlotHtml(dino, roleLabel, roleClass) {
         compact: true
       })}
       <div class="slot-badges">
-        <span>F${dino.generation ?? 0}</span>
+        ${renderGenBadge(dino)}
         ${bloodlineBonus > 0 ? `<span class="badge-bloodline">📈上限+${bloodlineBonus}</span>` : ""}
-        <span>${getRarityLabel(dino.rarityType)}</span>
+        ${renderRarityBadge(dino)}
         <span class="badge-trait" title="${trait.desc}" data-trait-name="${trait.icon} ${trait.name}" data-trait-desc="${trait.desc}">${trait.icon} ${trait.name}</span>
         <span>${getColorLabel(dino.color)}</span>
         ${dino.mutant ? `<span class="badge-mutant">🧬MUTANT</span>` : ""}
@@ -1196,6 +1298,101 @@ function renderFacility(game, handlers) {
   listEl.querySelectorAll(".btn-upgrade").forEach(btn => {
     btn.onclick = () => handlers.onUpgradeFacility(btn.dataset.key);
   });
+
+  // 3. 🗿 古代のモニュメント（無限強化施設）
+  const monEl = document.getElementById("monumentBox");
+  if (monEl) {
+    const maxedCount = FACILITIES.filter(f => (facState[f.key] ?? 0) >= MAX_FACILITY_LEVEL).length;
+    const isMonumentUnlocked = maxedCount >= FACILITIES.length;
+
+    const monLv = facState.monumentLevel ?? 0;
+    const plan = getMonumentUpgradeCost(monLv);
+    const canAffordMon =
+      isMonumentUnlocked &&
+      (mats.wood ?? 0) >= plan.wood &&
+      (mats.stone ?? 0) >= plan.stone &&
+      (mats.ore ?? 0) >= plan.ore;
+
+    monEl.innerHTML = `
+      <div class="endgame-section-box is-monument ${!isMonumentUnlocked ? "is-locked" : ""}">
+        <div class="fac-card-header">
+          <h3>🗿 古代のモニュメント（無限強化）</h3>
+          <span class="fac-lv-badge">
+            ${isMonumentUnlocked
+              ? `Lv.${monLv}（全ステ +${monLv * 2}%）`
+              : `🔒 未解放（MAX施設: ${maxedCount} / ${FACILITIES.length}）`
+            }
+          </span>
+        </div>
+        <p class="fac-desc">
+          <strong>【解放条件】上の基本4施設すべてが Lv.MAX になると活性化します。</strong><br>
+          上限なしで強化できる古代の石碑。遠征素材を捧げるたびに全恐竜の攻撃・HP・素早さが +2% ずつ永遠に上昇します。
+        </p>
+        <div class="monument-action-row">
+          <div class="facility-cost">
+            ${isMonumentUnlocked
+              ? `次の強化（Lv.${plan.nextLv} / +${plan.nextLv * 2}%）：<strong>${plan.costText}</strong>`
+              : `※まずは基本の4施設をすべて Lv.MAX まで強化してください`
+            }
+          </div>
+          <button id="upgradeMonumentBtn" class="btn-upgrade" ${!canAffordMon ? "disabled" : ""}>
+            ${isMonumentUnlocked ? "🗿 モニュメントを強化する" : "🔒 4施設MAXで解放"}
+          </button>
+        </div>
+      </div>
+    `;
+    document.getElementById("upgradeMonumentBtn").onclick = handlers.onUpgradeMonument;
+  }
+
+  // 4. 🔨 古代工房（基本4施設がすべてLv.MAXで解放）
+  const craftEl = document.getElementById("craftWorkshopBox");
+  if (craftEl) {
+    const maxedCount = FACILITIES.filter(f => (facState[f.key] ?? 0) >= MAX_FACILITY_LEVEL).length;
+    const isWorkshopUnlocked = maxedCount >= FACILITIES.length;
+
+    craftEl.innerHTML = `
+      <div class="endgame-section-box is-workshop ${!isWorkshopUnlocked ? "is-locked" : ""}">
+        <div class="fac-card-header">
+          <h3>🔨 古代工房（素材クラフト）</h3>
+          <span class="fac-lv-badge">
+            ${isWorkshopUnlocked
+              ? "✨ 稼働中"
+              : `🔒 未解放（MAX施設: ${maxedCount} / ${FACILITIES.length}）`
+            }
+          </span>
+        </div>
+        <p class="fac-desc">
+          <strong>【解放条件】上の基本4施設すべてが Lv.MAX になると解放されます。</strong><br>
+          余った建築素材から生命の結晶や厳選アイテム（特性変更の果実・個体値強化の秘薬）を作成できます。
+        </p>
+
+        <!-- クラフトレシピ一覧 -->
+        <div class="craft-grid">
+          ${CRAFT_RECIPES.map(r => {
+            const canCraft = isWorkshopUnlocked && Object.entries(r.cost).every(([k, needed]) => {
+              const owned = ["wood", "stone", "ore"].includes(k) ? (mats[k] ?? 0) : (foods[k] ?? 0);
+              return owned >= needed;
+            });
+            return `
+              <div class="craft-card">
+                <div class="craft-title">${r.icon} <strong>${r.name}</strong></div>
+                <div class="craft-desc">${r.desc}</div>
+                <div class="facility-cost">素材：${r.costText}</div>
+                <button class="btn-craft" data-id="${r.id}" ${!canCraft ? "disabled" : ""}>
+                  ${isWorkshopUnlocked ? "🔨 作成する" : "🔒 4施設MAXで解放"}
+                </button>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
+    `;
+
+    craftEl.querySelectorAll(".btn-craft").forEach(btn => {
+      btn.onclick = () => handlers.onCraftItem(btn.dataset.id);
+    });
+  }
+
 }
 
 // 9. 遠征タブ全体の描画
@@ -1369,8 +1566,8 @@ function renderExpeditionTab(game, handlers) {
     card.innerHTML = `
       <div class="card-top-row" style="min-height: 28px;">
         <div class="card-badges">
-          <span class="badge-gen">F${dino.generation ?? 0}</span>
-          <span class="badge-rarity">${getRarityLabel(dino.rarityType)}</span>
+          ${renderGenBadge(dino)}
+          ${renderRarityBadge(dino)}
           <span class="badge-trait ${isLucky ? "is-lucky-highlight" : ""}" title="${trait.desc}" data-trait-name="${trait.icon} ${trait.name}" data-trait-desc="${trait.desc}">
             ${trait.icon} ${trait.name}
           </span>
@@ -1412,6 +1609,102 @@ function renderExpeditionTab(game, handlers) {
   });
 }
 
+// 10. ガチャ卵タブの描画
+function renderGachaTab(game, state, handlers) {
+  const stageEl = document.getElementById("gachaStage");
+  const resultEl = document.getElementById("gachaResultArea");
+  if (!stageEl || !resultEl) return;
+
+  const crystals = game.items?.breedCrystal ?? 0;
+  const maxGen = state?.gachaMaxGen ?? 5;
+  const discoveredCount = (game.discoveredSpecies ?? []).length;
+
+  stageEl.innerHTML = `
+    <div class="gacha-box">
+      <div class="gacha-status-row">
+        <div class="gacha-crystal-pill">💎 所持結晶：<strong>${crystals}</strong> 個</div>
+        <div class="gacha-spec-pill">📖 対象種族：<strong>${discoveredCount}</strong> 種 ／ 🧬 出現世代：<strong>F0 〜 F${maxGen}</strong></div>
+      </div>
+
+      <div class="gacha-rates-info">
+        <span>排出率：⚪ 白 45% ／ 🔵 青 30% ／ 🟣 紫 18% ／ 🌈 虹 7%（🧬 突然変異 12%・希少体色 28%）</span>
+      </div>
+
+      <div class="gacha-btn-group">
+        <button id="gacha1Btn" class="btn-gacha-single" ${crystals < 10 ? "disabled" : ""}>
+          🥚 1回まわす<br><small>💎 生命の結晶 ×10</small>
+        </button>
+        <button id="gacha10Btn" class="btn-gacha-multi" ${crystals < 100 ? "disabled" : ""}>
+          🌈 10回まわす<br><small>💎 生命の結晶 ×100</small>
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("gacha1Btn").onclick = () => handlers.onRollGacha(1);
+  document.getElementById("gacha10Btn").onclick = () => handlers.onRollGacha(10);
+
+  // 直近のガチャ結果表示
+  const results = state?.lastGachaResults ?? [];
+  if (results.length === 0) {
+    resultEl.innerHTML = `<p class="empty-msg">上のボタンを押してガチャ卵を召喚しよう！</p>`;
+    return;
+  }
+
+  resultEl.innerHTML = `
+    <h3 class="gacha-result-title">✨ 召喚結果（${results.length}体）</h3>
+    <div class="gacha-result-grid">
+      ${results.map(dino => {
+        const trait = getTraitData(dino.trait);
+        const dinoType = getDinoType(dino.speciesId, dino.name);
+        const bonus = getBloodlineBonus(dino);
+        const isHighRare = dino.rarityType === "rainbow" || dino.rarityType === "purple" || dino.mutant;
+
+        return `
+          <div class="dino-card gacha-card ${isHighRare ? "is-gacha-jackpot" : ""} ${dino.mutant ? "is-mutant" : ""}">
+            <div class="card-top-row">
+              <div class="card-badges">
+                ${renderGenBadge(dino)}
+                <span class="badge-type type-${dinoType.id}">${dinoType.icon} ${dinoType.name}</span>
+                ${bonus > 0 ? `<span class="badge-bloodline">📈上限+${bonus}</span>` : ""}
+                ${renderRarityBadge(dino)}
+                <span
+                  class="badge-trait"
+                  title="${trait.desc}"
+                  data-trait-name="${trait.icon} ${trait.name}"
+                  data-trait-desc="${trait.desc}"
+                >${trait.icon} ${trait.name}</span>
+                ${dino.mutant ? `<span class="badge-mutant">🧬MUTANT</span>` : ""}
+              </div>
+              <div class="card-lv">Lv.1<small>/${dino.maxLevel}</small></div>
+            </div>
+
+            <div class="card-name-line">
+              <h3>${dino.name}</h3>
+              <small>${getSexLabel(dino.sex)}</small>
+            </div>
+
+            ${renderDinoAvatar(dino.speciesId, {
+              color: dino.color,
+              size: dino.size,
+              mutant: dino.mutant,
+              compact: true
+            })}
+
+            <div class="card-sub-meta">
+              <span>📏 ${getSizeLabel(dino.size)}</span>
+              <span>🎨 ${getColorLabel(dino.color)}</span>
+            </div>
+            <div class="card-iv-total">
+              IV: ATK <strong>${dino.atkIv}</strong> / HP <strong>${dino.hpIv}</strong> / SPD <strong>${dino.spdIv}</strong>
+            </div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
 // 全体描画のエントリーポイント
 export function renderGame(game, state, handlers) {
   renderStarterEgg(game, handlers);
@@ -1428,10 +1721,18 @@ export function renderGame(game, state, handlers) {
   renderTreasures(game);
   renderFacility(game, handlers);
   renderExpeditionTab(game, handlers);
+  renderGachaTab(game, state, handlers);
   updateExpBadge(game);
 
   // エサやりボタンの共通登録（育成中エリア＋一覧の両方に対応）
   document.querySelectorAll(".feed-btn").forEach(btn => {
     btn.onclick = () => handlers.onFeed(btn.dataset.id, btn.dataset.type);
   });
+
+  const fruitBtn = document.getElementById("useTraitFruitBtn");
+  if (fruitBtn) fruitBtn.onclick = handlers.onUseTraitFruit;
+
+  const elixirBtn = document.getElementById("useIvElixirBtn");
+  if (elixirBtn) elixirBtn.onclick = handlers.onUseIvElixir;
+
 }

@@ -16,8 +16,7 @@ const { getTraitData } = traitModule;
 import { AREA_BOSSES } from "./data/bosses.js";
 import { AREA_EXPEDITIONS } from "./data/expeditions.js";
 import { playExploreSequence } from "./ui/battleStage.js";
-import { FACILITIES, MAX_FACILITY_LEVEL, getFacilityBonuses } from "./data/facilities.js";
-
+import { FACILITIES, MAX_FACILITY_LEVEL, getFacilityBonuses, CRAFT_RECIPES, getMonumentUpgradeCost } from "./data/facilities.js";
 
 let game = loadGame();
 syncTreasures(game.treasures);
@@ -54,6 +53,7 @@ let sortBy = "default";
 let lastActionTime = 0;
 let tickCounter = 0;
 let isAutoExploring = false;
+let lastGachaResults = [];
 
 function discoverSpecies(dino) {
   if (!game.discoveredSpecies.includes(dino.speciesId)) {
@@ -1349,6 +1349,162 @@ function handleUpgradeFacility(facilityKey) {
   update();
 }
 
+// 🗿 古代のモニュメント（無限強化）
+function handleUpgradeMonument() {
+  if (!canAct()) return;
+
+  const isAllMax = FACILITIES.every(f => (game.facility?.[f.key] ?? 0) >= MAX_FACILITY_LEVEL);
+  if (!isAllMax) {
+    alert("基本の4施設すべてを Lv.MAX にすると解放されます！");
+    return;
+  }
+
+  game.facility ??= { incubatorLevel: 0, trainingLevel: 0, kitchenLevel: 0, arenaLevel: 0, monumentLevel: 0 };
+  game.materials ??= { wood: 0, stone: 0, ore: 0 };
+
+  const currentLv = game.facility.monumentLevel ?? 0;
+  const plan = getMonumentUpgradeCost(currentLv);
+
+  if ((game.materials.wood ?? 0) < plan.wood || (game.materials.stone ?? 0) < plan.stone || (game.materials.ore ?? 0) < plan.ore) {
+    alert(`素材が足りません！\n必要素材：${plan.costText}`);
+    return;
+  }
+
+  game.materials.wood -= plan.wood;
+  game.materials.stone -= plan.stone;
+  game.materials.ore -= plan.ore;
+  game.facility.monumentLevel = plan.nextLv;
+
+  const totalBonus = plan.nextLv * 2;
+  addLog(`🗿 【無限強化】「古代のモニュメント」が Lv.${plan.nextLv} に到達！（全ステータス +${totalBonus}%）`);
+  update();
+}
+
+// 🔨 古代工房でのアイテムクラフト
+function handleCraftItem(recipeId) {
+  if (!canAct()) return;
+
+  const isAllMax = FACILITIES.every(f => (game.facility?.[f.key] ?? 0) >= MAX_FACILITY_LEVEL);
+  if (!isAllMax) {
+    alert("基本の4施設すべてを Lv.MAX にすると解放されます！");
+    return;
+  }
+
+  const recipe = CRAFT_RECIPES.find(r => r.id === recipeId);
+  if (!recipe) return;
+
+  game.materials ??= { wood: 0, stone: 0, ore: 0 };
+  game.items ??= {};
+
+  // 素材チェック
+  for (const [key, needed] of Object.entries(recipe.cost)) {
+    const owned = ["wood", "stone", "ore"].includes(key)
+      ? (game.materials[key] ?? 0)
+      : (game.foods[key] ?? 0);
+    if (owned < needed) {
+      alert(`素材が足りません！\n必要素材：${recipe.costText}`);
+      return;
+    }
+  }
+
+  // 素材消費
+  for (const [key, needed] of Object.entries(recipe.cost)) {
+    if (["wood", "stone", "ore"].includes(key)) {
+      game.materials[key] -= needed;
+    } else {
+      game.foods[key] -= needed;
+    }
+  }
+
+  // アイテム付与
+  if (recipeId === "craft_crystal") {
+    game.items.breedCrystal = (game.items.breedCrystal ?? 0) + 3;
+    game.stats.crystalsEarned = (game.stats.crystalsEarned ?? 0) + 3;
+  } else if (recipeId === "craft_premium_meat") {
+    game.foods.premium = (game.foods.premium ?? 0) + 5;
+  } else if (recipeId === "craft_trait_fruit") {
+    game.items.traitFruit = (game.items.traitFruit ?? 0) + 1;
+  } else if (recipeId === "craft_iv_elixir") {
+    game.items.ivElixir = (game.items.ivElixir ?? 0) + 1;
+  }
+
+  game.stats.itemsCrafted = (game.stats.itemsCrafted ?? 0) + 1;
+
+  addLog(`🔨 【古代工房】「${recipe.icon} ${recipe.name}」を作成した！`);
+  update();
+}
+
+// 🎲 特性変更の果実を使用
+function handleUseTraitFruit(targetDinoId = game.activeDinoId) {
+  if (!canAct()) return;
+  if ((game.items?.traitFruit ?? 0) <= 0) return;
+
+  const targetDino = game.dinos.find(d => d.uid === targetDinoId);
+  if (!targetDino) return;
+
+  const rawTraits = traitModule.TRAITS ?? traitModule.default ?? {};
+  const traitList = Array.isArray(rawTraits) ? rawTraits : Object.values(rawTraits);
+  const candidates = traitList.filter(t => t.id !== targetDino.trait);
+  if (candidates.length === 0) return;
+
+  const oldTrait = getTraitData(targetDino.trait);
+  const nextTrait = candidates[Math.floor(Math.random() * candidates.length)];
+
+  const ok = confirm(
+    `⚠️ 【貴重品の使用確認】\n` +
+    `「🎲 特性変更の果実」を 1個 消費して、${targetDino.name} の特性を変更しますか？\n\n` +
+    `現在の特性：${oldTrait.icon} ${oldTrait.name}（${oldTrait.desc}）\n` +
+    `※別のランダムな特性へ上書きされます`
+  );
+  if (!ok) return;
+
+  game.items.traitFruit--;
+  game.stats.itemsUsed = (game.stats.itemsUsed ?? 0) + 1;
+  targetDino.trait = nextTrait.id;
+
+  const newStats = calculateStats(targetDino);
+  targetDino.currentHp = Math.min(newStats.hp, targetDino.currentHp);
+
+  addLog(`🎲 【特性変化】${targetDino.name} の特性が「${oldTrait.name}」から「${nextTrait.icon} ${nextTrait.name}」に変化した！`);
+  alert(`🎲 特性が変化しました！\n\n新しい特性：${nextTrait.icon} ${nextTrait.name}\n効果：${nextTrait.desc}`);
+  update();
+}
+
+// 💉 個体値強化の秘薬を使用
+function handleUseIvElixir(targetDinoId = game.activeDinoId) {
+  if (!canAct()) return;
+  if ((game.items?.ivElixir ?? 0) <= 0) return;
+
+  const targetDino = game.dinos.find(d => d.uid === targetDinoId);
+  if (!targetDino) return;
+
+  if (targetDino.atkIv >= 100 && targetDino.hpIv >= 100 && targetDino.spdIv >= 100) {
+    alert(`${targetDino.name} の個体値（IV）はすでにすべて上限（100）に達しています！`);
+    return;
+  }
+
+  const ok = confirm(
+    `⚠️ 【貴重品の使用確認】\n` +
+    `「💉 個体値強化の秘薬」を 1個 消費して、${targetDino.name} を強化しますか？\n\n` +
+    `現在の個体値：ATK ${targetDino.atkIv} / HP ${targetDino.hpIv} / SPD ${targetDino.spdIv}\n` +
+    `※すべての個体値が +10 上昇します（上限100）`
+  );
+  if (!ok) return;
+
+  game.items.ivElixir--;
+  game.stats.itemsUsed = (game.stats.itemsUsed ?? 0) + 1;
+  targetDino.atkIv = Math.min(100, (targetDino.atkIv ?? 0) + 10);
+  targetDino.hpIv = Math.min(100, (targetDino.hpIv ?? 0) + 10);
+  targetDino.spdIv = Math.min(100, (targetDino.spdIv ?? 0) + 10);
+
+  const newStats = calculateStats(targetDino);
+  targetDino.currentHp = Math.min(newStats.hp, targetDino.currentHp + 50);
+
+  addLog(`💉 【個体値強化】${targetDino.name} のIVが上昇！（ATK:${targetDino.atkIv} / HP:${targetDino.hpIv} / SPD:${targetDino.spdIv}）`);
+  alert(`💉 個体値が強化されました！\n\nATK IV: ${targetDino.atkIv} / HP IV: ${targetDino.hpIv} / SPD IV: ${targetDino.spdIv}`);
+  update();
+}
+
 // 現在の周回数に応じた敵ステータス倍率（1周目:1倍, 2周目:2.2倍, 3周目:4.84倍...）
 function getLoopStatMultiplier() {
   const loop = game.worldLoop ?? 1;
@@ -1390,6 +1546,143 @@ function handleAdvanceWorldLoop() {
   addLog(`==============================`);
   addLog(`🌌 【新世界到達！】「${nextLoop}周目」の冒険が幕を開けた！`);
   addLog(`==============================`);
+
+  update();
+}
+
+// 現在のガチャ最高出現世代を計算（最低F5、所持恐竜や到達最高世代がそれ以上ならそちらを採用）
+function getGachaMaxGeneration() {
+  const highestOwned = game.dinos.reduce((max, d) => Math.max(max, d.generation ?? 0), 0);
+  const recordMax = game.stats?.maxGeneration ?? 0;
+  return Math.max(5, highestOwned, recordMax);
+}
+
+// ガチャから1体の恐竜を生成するヘルパー
+function rollGachaDino() {
+  // 図鑑解放済みの種族プールを作成（通常種＋発見済みの特殊交配種）
+  const discoveredSet = new Set(game.discoveredSpecies ?? []);
+  const normalPool = DINO_SPECIES.filter(d => discoveredSet.has(d.id));
+  const specialPool = SPECIAL_BREEDS
+    .filter(b => discoveredSet.has(b.result.id))
+    .map(b => b.result);
+
+  let pool = [...normalPool, ...specialPool];
+  if (pool.length === 0) {
+    pool = [DINO_SPECIES];
+  }
+
+  const base = pool[Math.floor(Math.random() * pool.length)];
+
+  // レア度抽選（白45% / 青30% / 紫18% / 虹7%）
+  const rRoll = Math.random();
+  const rarityType =
+    rRoll < 0.07 ? "rainbow" :
+    rRoll < 0.25 ? "purple" :
+    rRoll < 0.55 ? "blue" : "white";
+
+  // 体格抽選
+  const sizes = ["small", "normal", "large", "giant"];
+  const size = sizes[Math.floor(Math.random() * sizes.length)];
+
+  // 体色抽選（通常72% / 青12% / 金10% / 虹6%）
+  const cRoll = Math.random();
+  const color =
+    cRoll < 0.06 ? "rainbow" :
+    cRoll < 0.16 ? "gold" :
+    cRoll < 0.28 ? "blue" : "normal";
+
+  // 突然変異（12%）
+  const mutant = Math.random() < 0.12;
+
+  // 特性を全特性からランダム抽選
+  const rawTraits = traitModule.TRAITS ?? traitModule.default ?? {};
+  const traitList = Array.isArray(rawTraits) ? rawTraits : Object.values(rawTraits);
+  const pickedTrait = traitList.length > 0
+    ? traitList[Math.floor(Math.random() * traitList.length)].id
+    : "brave";
+
+  // 世代（F0 〜 maxGen）とレベル上限ボーナスをランダム決定
+  const maxGen = getGachaMaxGeneration();
+  const generation = Math.floor(Math.random() * (maxGen + 1));
+  const genBaseMax = 20 + generation * 5;
+  const maxAllowedBonus = generation * 10;
+  const randomBonus = Math.floor(Math.random() * (maxAllowedBonus + 1));
+  const maxLevel = genBaseMax + randomBonus;
+
+  const uid = (typeof crypto !== "undefined" && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : `gacha-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+  const dino = {
+    uid,
+    speciesId: base.id,
+    name: base.name,
+    sex: Math.random() < 0.5 ? "male" : "female",
+    level: 1,
+    maxLevel,
+    exp: 0,
+    rarityType,
+    size,
+    color,
+    mutant,
+    trait: pickedTrait,
+    generation,
+    baseAtk: base.baseAtk,
+    baseHp: base.baseHp,
+    baseSpd: base.baseSpd,
+    atkIv: Math.floor(Math.random() * 101),
+    hpIv: Math.floor(Math.random() * 101),
+    spdIv: Math.floor(Math.random() * 101),
+    currentHp: 1,
+    locked: false
+  };
+
+  const stats = calculateStats(dino);
+  dino.currentHp = stats.hp;
+  return dino;
+}
+
+// 🎰 ガチャ実行処理（1回 or 10回）
+function handleRollGacha(times = 1) {
+  if (!canAct()) return;
+
+  const cost = times * 10;
+  const ownedCrystals = game.items?.breedCrystal ?? 0;
+
+  if (ownedCrystals < cost) {
+    alert(`💎「生命の結晶」が足りません！（必要数: ${cost}個 / 所持: ${ownedCrystals}個）`);
+    return;
+  }
+
+  game.items.breedCrystal -= cost;
+  game.stats.gachaRolls = (game.stats.gachaRolls ?? 0) + times;
+
+  const results = [];
+  for (let i = 0; i < times; i++) {
+    const dino = rollGachaDino();
+    game.dinos.push(dino);
+    if (!game.activeDinoId) game.activeDinoId = dino.uid;
+
+    game.stats.eggsHatched++;
+    if (dino.mutant) game.stats.mutantsBorn++;
+    game.stats.maxGeneration = Math.max(game.stats.maxGeneration ?? 0, dino.generation);
+
+    results.push(dino);
+  }
+
+  lastGachaResults = results;
+
+  if (times === 1) {
+    const d = results;
+    const trait = getTraitData(d.trait);
+    const sexLabel = d.sex === "male" ? "♂️ オス" : "♀️ メス";
+    addLog(`🎰 【ガチャ卵】「${d.name}（F${d.generation} / ${getRarityLabel(d.rarityType)} / ${trait.icon}${trait.name}）」を召喚した！`);
+  } else {
+    const rainbowCount = results.filter(d => d.rarityType === "rainbow").length;
+    const purpleCount = results.filter(d => d.rarityType === "purple").length;
+    const mutantCount = results.filter(d => d.mutant).length;
+    addLog(`🎰 【10連ガチャ卵】10体を召喚！（🌈虹:${rainbowCount} / 🟣紫:${purpleCount} / 🧬変異:${mutantCount}）`);
+  }
 
   update();
 }
@@ -1485,6 +1778,11 @@ const handlers = {
   onToggleAutoExplore: handleToggleAutoExplore,
   onAdvanceWorldLoop: handleAdvanceWorldLoop,
   onAutoSelectExpMembers: handleAutoSelectExpMembers,
+  onUpgradeMonument: handleUpgradeMonument,
+  onCraftItem: handleCraftItem,
+  onRollGacha: handleRollGacha,
+  onUseTraitFruit: (dinoId) => handleUseTraitFruit(dinoId ?? game.activeDinoId),
+  onUseIvElixir: (dinoId) => handleUseIvElixir(dinoId ?? game.activeDinoId),
   onSetActive: (dinoId) => {
     if (getBusyExpeditionDinoIds().has(dinoId)) {
       alert("🏕️ 遠征中の恐竜は育成パートナーに設定できません！帰還を待ってください。");
@@ -1732,7 +2030,9 @@ function update() {
       filterGen,
       filterLock,
       sortBy,
-      isAutoExploring
+      isAutoExploring,
+      lastGachaResults,
+      gachaMaxGen: getGachaMaxGeneration()
     },
     handlers
   );
@@ -1984,6 +2284,15 @@ document.getElementById("typeChartBtn")?.addEventListener("click", () => {
     `・海エリア：🌊 海生は能力 1.35倍 ／ 海生以外は 0.75倍\n` +
     `・陸エリア：🌊 海生は能力 0.75倍`
   );
+});
+
+// 世代バッジ・レア度バッジをタップしたときに詳細を表示（スマホ・PC共通）
+document.addEventListener("click", (e) => {
+  const badge = e.target.closest("[data-badge-desc]");
+  if (!badge) return;
+
+  e.stopPropagation();
+  alert(`${badge.dataset.badgeTitle}\n━━━━━━━━━━━━━━━━━━━━\n${badge.dataset.badgeDesc}`);
 });
 
 // 📖 早見表モーダル制御（特性一覧 ＆ 特殊交配レシピ）

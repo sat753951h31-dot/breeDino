@@ -272,5 +272,94 @@ export const ACHIEVEMENTS = [
         max: FACILITIES.length * MAX_FACILITY_LEVEL
       };
     }
+  },
+{
+    id: "craft_first",
+    title: "古代の職人",
+    desc: "古代工房で初めてアイテムを作成する",
+    rewardText: "🥩 上質肉 ×5",
+    reward: { type: "good", amount: 5 },
+    getProgress: (game) => ({ current: game.stats.itemsCrafted ?? 0, max: 1 })
+  },
+  {
+    id: "craft_master",
+    title: "伝説の錬金マイスター",
+    desc: "古代工房でアイテムを累計 20回 作成する",
+    rewardText: "✨ 極上肉 ×20",
+    reward: { type: "premium", amount: 20 },
+    getProgress: (game) => ({ current: game.stats.itemsCrafted ?? 0, max: 20 })
+  },
+  {
+    id: "use_special_first",
+    title: "覚醒の儀式",
+    desc: "特性変更の果実または個体値強化の秘薬を初めて使用する",
+    rewardText: "✨ 極上肉 ×5",
+    reward: { type: "premium", amount: 5 },
+    getProgress: (game) => ({ current: game.stats.itemsUsed ?? 0, max: 1 })
+  },
+  {
+    id: "use_special_master",
+    title: "究極個体の創造主",
+    desc: "特性変更の果実または個体値強化の秘薬を累計 15回 使用する",
+    rewardText: "✨ 極上肉 ×30",
+    reward: { type: "premium", amount: 30 },
+    getProgress: (game) => ({ current: game.stats.itemsUsed ?? 0, max: 15 })
+  },
+  {
+    id: "gacha_first",
+    title: "結晶の召喚師",
+    desc: "ガチャ卵を初めて回す",
+    rewardText: "🥩 上質肉 ×5",
+    reward: { type: "good", amount: 5 },
+    getProgress: (game) => ({ current: game.stats.gachaRolls ?? 0, max: 1 })
+  },
+  {
+    id: "gacha_10",
+    title: "運命の10連召喚",
+    desc: "ガチャ卵を累計 10回 回す",
+    rewardText: "✨ 極上肉 ×10",
+    reward: { type: "premium", amount: 10 },
+    getProgress: (game) => ({ current: game.stats.gachaRolls ?? 0, max: 10 })
+  },
+  {
+    id: "gacha_50",
+    title: "伝説のガチャマスター",
+    desc: "ガチャ卵を累計 50回 回す",
+    rewardText: "✨ 極上肉 ×30",
+    reward: { type: "premium", amount: 30 },
+    getProgress: (game) => ({ current: game.stats.gachaRolls ?? 0, max: 50 })
+  },
+  {
+    id: "loop_2",
+    title: "新たな世界の開拓者",
+    desc: "1周目を制覇し、2周目の世界に到達する",
+    rewardText: "✨ 極上肉 ×10",
+    reward: { type: "premium", amount: 10 },
+    getProgress: (game) => ({
+      current: Math.max(game.worldLoop ?? 1, game.stats?.maxWorldLoop ?? 1),
+      max: 2
+    })
+  },
+  {
+    id: "loop_5",
+    title: "次元を超える覇者",
+    desc: "5周目の世界に到達する",
+    rewardText: "✨ 極上肉 ×30",
+    reward: { type: "premium", amount: 30 },
+    getProgress: (game) => ({
+      current: Math.max(game.worldLoop ?? 1, game.stats?.maxWorldLoop ?? 1),
+      max: 5
+    })
+  },
+  {
+    id: "loop_10",
+    title: "永劫の恐竜神",
+    desc: "10周目の世界に到達する",
+    rewardText: "✨ 極上肉 ×100",
+    reward: { type: "premium", amount: 100 },
+    getProgress: (game) => ({
+      current: Math.max(game.worldLoop ?? 1, game.stats?.maxWorldLoop ?? 1),
+      max: 10
+    })
   }
 ];
