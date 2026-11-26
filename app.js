@@ -56,6 +56,9 @@ let isAutoExploring = false;
 let lastGachaResults = [];
 let isRainbowSelectMode = false;
 let selectedRainbowIds = new Set();
+let filterAchievement = "all";
+let filterDex = "all";
+let filterDexType = "all";
 
 function discoverSpecies(dino) {
   if (!game.discoveredSpecies.includes(dino.speciesId)) {
@@ -2182,6 +2185,9 @@ function update() {
       filterRarity,
       filterGen,
       filterLock,
+      filterAchievement,
+      filterDex,
+      filterDexType,
       sortBy,
       isAutoExploring,
       lastGachaResults,
@@ -2249,6 +2255,21 @@ document.getElementById("filterGen")?.addEventListener("change", (e) => {
 
 document.getElementById("filterLock")?.addEventListener("change", (e) => {
   filterLock = e.target.value;
+  update();
+});
+
+document.getElementById("filterAchievement")?.addEventListener("change", (e) => {
+  filterAchievement = e.target.value;
+  update();
+});
+
+document.getElementById("filterDex")?.addEventListener("change", (e) => {
+  filterDex = e.target.value;
+  update();
+});
+
+document.getElementById("filterDexType")?.addEventListener("change", (e) => {
+  filterDexType = e.target.value;
   update();
 });
 
@@ -2467,6 +2488,120 @@ function openGuideModal(title, html) {
 
 // 💡 汎用Tipsデータ（ここにキーを追加するだけでどの画面でも使い回せます）
 const TIPS_DATA = {
+  dinos_guide: {
+    title: "💡 恐竜一覧・保護ロック・結晶還元の仕組み",
+    items: [
+      {
+        title: "1. 保護ロック（🔒）と自動保護ルール",
+        desc: "🔒ボタンを押してロックした恐竜は、個別のお別れ・一括整理・虹レア還元のすべてから保護されます。また、育成中・遠征中・交配選択中・ミュータント・希少体色も自動で保護されます。"
+      },
+      {
+        title: "2. 貴重品（🎲 果実 ／ 💉 秘薬）の直接強化",
+        desc: "各カードの下部ボタンから、メイン交代なしで直接「特性変更の果実」や「個体値強化の秘薬（通常上限100 / 変異体上限150）」を使えます。"
+      },
+      {
+        title: "3. 余った虹レアの結晶還元",
+        desc: "「💎 虹レアを選んで還元する」を押すと還元モードになり、不要な虹レアを「💎 生命の結晶（5〜15個）」へ変換できます。絞り込み後の「☑️ 表示中を一括選択」も便利です。"
+      }
+    ]
+  },
+
+  facility_guide: {
+    title: "💡 拠点設備・モニュメント・古代工房の仕組み",
+    items: [
+      {
+        title: "1. 基本4施設のアップグレード効果",
+        desc: "遠征で集めた建築素材（木材・石材・鉱石）とお肉を納品すると、孵化時間短縮・待機EXP増加・エサ回復量UP・全ステータス強化などの永続バフが得られます。"
+      },
+      {
+        title: "2. 🗿 古代のモニュメント（無限強化）",
+        desc: "基本の4施設すべてを Lv.MAX にすると解放されます。素材を捧げるたびに全恐竜の攻撃・HP・素早さが +2% ずつ上限なしで上昇します。"
+      },
+      {
+        title: "3. 🔨 古代工房（素材クラフト）",
+        desc: "同じく4施設すべてが Lv.MAX で解放されます。余った素材から「生命の結晶」「極上肉」「特性変更の果実」「個体値強化の秘薬」を作成できます。"
+      },
+      {
+        title: "4. 🏺 古代の秘宝（永続パッシブ効果）",
+        desc: "各エリアの探索中に低確率でドロップする伝説の秘宝です。所持しているだけで全恐竜に永続バフがかかり、同じ秘宝を再度拾うと自動的にレベルアップ（最大Lv.MAX）します。"
+      }
+    ]
+  },
+
+  gacha_guide: {
+    title: "💡 生命の結晶ガチャ・高級ガチャの仕組み",
+    items: [
+      {
+        title: "1. 出現する種族のプール",
+        desc: "すでに「📖 恐竜図鑑」に登録済みの種族（通常種＋発見済みの特殊交配種）の中からランダムで召喚されます。図鑑を埋めるほど強力なハイブリッドもガチャから直接狙えます。"
+      },
+      {
+        title: "2. 出現世代（F）とレベル上限",
+        desc: "通常ガチャ（結晶10個）は「F0 〜 最高世代（最低F5保証、所持MAXがそれ以上ならその世代まで）」の範囲でランダム出現します。"
+      },
+      {
+        title: "3. 👑 高級ガチャ（3周目以降で解放）",
+        desc: "3周目に到達すると解放（結晶100個）。白レアなし・個体値IV40以上保証・さらに「レベル上限ボーナスMAX確定」で、F[周回数]〜F[周回数+2]以上の高世代が排出されます。"
+      }
+    ]
+  },
+
+  dex_guide: {
+    title: "💡 恐竜図鑑と特殊交配のヒント",
+    items: [
+      {
+        title: "1. 図鑑登録のタイミングとメリット",
+        desc: "スターター卵・野生卵・交配卵が孵化した瞬間に図鑑へ登録されます。一度図鑑に登録された種族は、特殊交配種であっても「🎰 ガチャ卵」の排出対象に加わります。"
+      },
+      {
+        title: "2. 特殊交配レシピのヒント",
+        desc: "未発見の特殊交配枠には、親となる2種族の組み合わせヒントが表示されます。交配タブの「🧬 特殊レシピ」一覧からも全17種の組み合わせを確認できます。"
+      },
+      {
+        title: "3. ステータス表示について",
+        desc: "図鑑のステータス数値は「F0・白レア・個体値0・Lv.1時点」の基礎種族値です。同じ種族でも体格やレア度、世代を重ねることで大きく成長します。"
+      }
+    ]
+  },
+  expedition_guide: {
+    title: "💡 遠征の仕組みと報酬アップのコツ",
+    items: [
+      {
+        title: "1. 同時派遣できる部隊枠の増やし方",
+        desc: "探索率が 100% に到達したエリアの数だけ、同時に派遣できる部隊枠が増えます（最大6部隊）。2周目以降は最初から全6枠が解放されます。"
+      },
+      {
+        title: "2. チーム戦力による報酬倍率アップ",
+        desc: "派遣する1〜3体の合計ステータス（攻撃・HP・素早さ）が高いほど、持ち帰る建築素材や生命の結晶の獲得量が最大 2.5倍 まで増加します。"
+      },
+      {
+        title: "3. 特性「🍀 幸運」の重複ボーナス",
+        desc: "特性「🍀 幸運」を持つ恐竜を編成すると、1体につきレア卵や上質素材のドロップ率が +10% 上昇します（3体編成で最大 +30%）。"
+      },
+      {
+        title: "4. 待機メンバーの経験値育成",
+        desc: "遠征時間に応じて参加メンバー全員が経験値を獲得します。低レベルの恐竜を戦力の高い恐竜と一緒に派遣すると安全にレベル上げができます。"
+      }
+    ]
+  },
+
+  records_guide: {
+    title: "💡 実績・周回・エンドコンテンツの案内",
+    items: [
+      {
+        title: "1. 実績の達成と自動報酬",
+        desc: "条件を満たすと自動で実績が解除され、報酬のお肉が在庫へ直接加算されます。"
+      },
+      {
+        title: "2. 周回（ワールドループ）の仕組み",
+        desc: "エリア6のボス「深海竜王オケアノス」を倒すと次の周回へ進めます。敵の強さが 2.2倍・獲得経験値が 1.6倍 になり、各エリアのボス初回撃破報酬（虹卵・結晶）が復活します。"
+      },
+      {
+        title: "3. やり込み要素の解放条件",
+        desc: "・基本の4施設すべてを Lv.MAX にすると「🗿 古代のモニュメント（無限強化）」と「🔨 古代工房（厳選アイテム作成）」が解放されます。\n・3周目に到達するとガチャ卵タブで「👑 高級ガチャ」が解放されます。"
+      }
+    ]
+  },
   explore_battle: {
     title: "💡 バトル・相性・体格の仕組み",
     items: [
@@ -2502,6 +2637,10 @@ const TIPS_DATA = {
       {
         title: "4. 継承ボーナスと世代上限キャップ",
         desc: "両親がすでに持つボーナス（高い方）も引き継がれます。ただし、1世代で持てるボーナス上限は「世代数 × 10」までです。（例：F1は最大+10、F2は最大+20）"
+      },
+      {
+        title: "5. サイズ（体格）の遺伝と変異",
+        desc: "両親のサイズ（小型・中型・大型・巨大）の平均をもとに遺伝します。さらに誕生時に「10%で1段階大きく・5%で1段階小さく」サイズ変異が起きるため、大型同士から巨大種を狙うこともできます。"
       }
     ]
   }

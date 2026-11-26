@@ -83,6 +83,17 @@
 
 <!-- ② 恐竜一覧タブ -->
 <section id="tab-dinos" class="tab-panel">
+    <div class="breeding-header">
+      <h2>🦖 所持恐竜一覧</h2>
+      <button
+        type="button"
+        class="btn-help-pill is-tip js-open-tip"
+        data-tip-id="dinos_guide"
+        title="ロック保護・一括整理・虹レア結晶還元の仕組みを表示"
+      >
+        💡 Tips
+      </button>
+    </div>
     <div class="dino-controls">
     <div class="control-item">
       <label for="filterName">🔍 名前・種族検索</label>
@@ -241,6 +252,17 @@
 
 <!-- ⑥ 遠征タブ（#tab-breed の下あたりに追加） -->
 <section id="tab-expedition" class="tab-panel">
+  <div class="breeding-header">
+    <h2>🏕️ 遠征隊の派遣</h2>
+    <button
+      type="button"
+      class="btn-help-pill is-tip js-open-tip"
+      data-tip-id="expedition_guide"
+      title="遠征の部隊枠・戦力ボーナス・幸運効果の仕組みを表示"
+    >
+      💡 Tips
+    </button>
+  </div>
   <div id="activeExpeditions"></div>
   <div id="expeditionBuilder"></div>
   <h3>🦖 派遣可能な待機恐竜</h3>
@@ -249,37 +271,108 @@
 
 <!-- ④ 図鑑タブ -->
 <section id="tab-dex" class="tab-panel">
-  <h2>恐竜図鑑</h2>
+  <div class="breeding-header">
+    <h2>📖 恐竜図鑑</h2>
+    <button
+      type="button"
+      class="btn-help-pill is-tip js-open-tip"
+      data-tip-id="dex_guide"
+      title="図鑑登録のメリットと特殊交配ヒントの見方を表示"
+    >
+      💡 Tips
+    </button>
+  </div>
   <p id="dexCount"></p>
+  <div class="ach-filter-bar dex-filter-bar">
+    <div class="dex-filter-item">
+      <label for="filterDex">🔍 発見状況：</label>
+      <select id="filterDex">
+        <option value="all">すべて表示</option>
+        <option value="undiscovered">❔ 未発見のみ</option>
+        <option value="discovered">📖 発見済みのみ</option>
+      </select>
+    </div>
+
+    <div class="dex-filter-item">
+      <label for="filterDexType">🏷️ タイプ：</label>
+      <select id="filterDexType">
+        <option value="all">すべてのタイプ</option>
+        <option value="carnivore">🍖 肉食のみ</option>
+        <option value="herbivore">🌿 草食のみ</option>
+        <option value="pterosaur">🦅 翼竜のみ</option>
+        <option value="marine">🌊 海生のみ</option>
+      </select>
+    </div>
+  </div>
   <div id="dexList"></div>
 </section>
 
 <!-- ⑤ 実績・記録タブ（#tab-dex の下に追加） -->
 <section id="tab-records" class="tab-panel">
-  <h2>🏺 エリアの秘宝（パッシブ効果）</h2>
-  <div id="treasureList"></div>
+  <div class="breeding-header">
+    <h2>🏆 実績・プレイ記録</h2>
+    <button
+      type="button"
+      class="btn-help-pill is-tip js-open-tip"
+      data-tip-id="records_guide"
+      title="実績報酬・周回要素・エンドコンテンツの解放条件を表示"
+    >
+      💡 Tips
+    </button>
+  </div>
   
   <h2>📊 プレイレコード</h2>
   <div id="recordGrid"></div>
 
   <h2>🏆 実績一覧</h2>
   <p id="achievementCount"></p>
+  <div class="ach-filter-bar">
+    <label for="filterAchievement">🔍 達成状況で絞り込み：</label>
+    <select id="filterAchievement">
+      <option value="all">すべて表示</option>
+      <option value="incomplete">🔒 未達成のみ</option>
+      <option value="unlocked">🏆 達成済みのみ</option>
+    </select>
+  </div>
   <div id="achievementList"></div>
 </section>
 
 <!-- ⑦ 設備タブ（#tab-expedition の下あたりに追加） -->
 <section id="tab-facility" class="tab-panel">
-  <h2>⛺ 拠点の設備強化</h2>
+  <div class="breeding-header">
+    <h2>⛺ 拠点の設備強化</h2>
+    <button
+      type="button"
+      class="btn-help-pill is-tip js-open-tip"
+      data-tip-id="facility_guide"
+      title="設備強化・古代のモニュメント・古代工房の解放条件を表示"
+    >
+      💡 Tips
+    </button>
+  </div>
   <p class="tab-desc">遠征で手に入る建築素材とお肉を納品して、拠点の施設をアップグレードできます。</p>
   <div id="materialStorage"></div>
   <div id="facilityList"></div>
+  <h2>拠点の拡張設備強化</h2>
   <div id="monumentBox"></div>
   <div id="craftWorkshopBox"></div>
+  <h2>🏺 エリアの秘宝（パッシブ効果）</h2>
+  <div id="treasureList"></div>
 </section>
 
 <!-- ⑧ ガチャ卵タブ -->
 <section id="tab-gacha" class="tab-panel">
-  <h2>🎰 生命の結晶ガチャ</h2>
+  <div class="breeding-header">
+    <h2>🎰 生命の結晶ガチャ</h2>
+    <button
+      type="button"
+      class="btn-help-pill is-tip js-open-tip"
+      data-tip-id="gacha_guide"
+      title="ガチャの出現種族・世代ルール・高級ガチャの解放条件を表示"
+    >
+      💡 Tips
+    </button>
+  </div>
   <p class="tab-desc">生命の結晶を消費して、図鑑に登録済みの種族からランダムな世代・レア度・特性の恐竜を召喚します。</p>
   <div id="gachaStage"></div>
   <div id="gachaResultArea"></div>

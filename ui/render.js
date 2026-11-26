@@ -937,7 +937,7 @@ function getSpeciesDetail(id) {
 }
 
 // 7. 図鑑
-function renderDex(game) {
+function renderDex(game, state) {
   const dexListEl = document.getElementById("dexList");
   const dexCountEl = document.getElementById("dexCount");
   if (!dexListEl || !dexCountEl) return;
@@ -961,14 +961,38 @@ function renderDex(game) {
 
   dexListEl.innerHTML = "";
 
-  DEX_SPECIES.forEach((species, index) => {
+  const filterMode = state?.filterDex ?? "all";
+  const filterTypeMode = state?.filterDexType ?? "all";
+
+  const indexedSpecies = DEX_SPECIES.map((species, index) => ({
+    ...species,
+    no: String(index + 1).padStart(2, "0"),
+    found: game.discoveredSpecies.includes(species.id),
+    dinoType: getDinoType(species.id, species.name)
+  }));
+
+  const filteredSpecies = indexedSpecies.filter(item => {
+    if (filterMode === "undiscovered" && item.found) return false;
+    if (filterMode === "discovered" && !item.found) return false;
+    if (filterTypeMode !== "all" && item.dinoType.id !== filterTypeMode) return false;
+    return true;
+  });
+
+  if (filteredSpecies.length === 0) {
+    dexListEl.innerHTML = `<p class="empty-msg">${
+      filterMode === "undiscovered" && filterTypeMode === "all"
+        ? "👑 すべての恐竜を発見済みです！図鑑コンプリートおめでとうございます！"
+        : "条件に一致する恐竜がいません。"
+    }</p>`;
+    return;
+  }
+
+  filteredSpecies.forEach((species) => {
     const div = document.createElement("div");
-    const found = game.discoveredSpecies.includes(species.id);
-    const no = String(index + 1).padStart(2, "0");
+    const { found, no, dinoType } = species;
 
     if (found) {
       const detail = getSpeciesDetail(species.id);
-      const dinoType = getDinoType(species.id, species.name);
       div.className = `dex-card is-found ${species.special ? "is-special" : ""}`;
 
       div.innerHTML = `
@@ -1027,10 +1051,11 @@ function renderDex(game) {
 
     dexListEl.appendChild(div);
   });
+
 }
 
 // 8. 実績・記録タブの描画
-function renderRecords(game) {
+function renderRecords(game, state) {
   const recordGrid = document.getElementById("recordGrid");
   const achievementList = document.getElementById("achievementList");
   const achievementCount = document.getElementById("achievementCount");
@@ -1064,11 +1089,40 @@ function renderRecords(game) {
 
   const unlockedCount = game.unlockedAchievements.length;
   const totalCount = ACHIEVEMENTS.length;
+  const achPercent = totalCount > 0 ? Math.floor((unlockedCount / totalCount) * 100) : 0;
+
   if (achievementCount) {
-    achievementCount.textContent = `達成状況: ${unlockedCount} / ${totalCount} 達成`;
+    achievementCount.innerHTML = `
+      <div class="ach-summary-card ${achPercent === 100 ? "is-complete" : ""}">
+        <div class="gauge-label">
+          <span>🏆 実績コンプリート率 ${achPercent === 100 ? "👑 COMPLETE!" : ""}</span>
+          <strong>${unlockedCount} / ${totalCount} 達成 (${achPercent}%)</strong>
+        </div>
+        <div class="bar-bg">
+          <div class="bar-fill ach-fill" style="width: ${achPercent}%"></div>
+        </div>
+      </div>
+    `;
   }
 
-  achievementList.innerHTML = ACHIEVEMENTS.map(ach => {
+  const filterMode = state?.filterAchievement ?? "all";
+  const filteredAchievements = ACHIEVEMENTS.filter(ach => {
+    const isUnlocked = game.unlockedAchievements.includes(ach.id);
+    if (filterMode === "incomplete") return !isUnlocked;
+    if (filterMode === "unlocked") return isUnlocked;
+    return true;
+  });
+
+  if (filteredAchievements.length === 0) {
+    achievementList.innerHTML = `<p class="empty-msg">${
+      filterMode === "incomplete"
+        ? "👑 すべての実績を達成済みです！おめでとうございます！"
+        : "条件に一致する実績がありません。"
+    }</p>`;
+    return;
+  }
+
+  achievementList.innerHTML = filteredAchievements.map(ach => {
     const isUnlocked = game.unlockedAchievements.includes(ach.id);
     const { current, max } = ach.getProgress(game);
     const clamped = Math.min(current, max);
@@ -1091,6 +1145,7 @@ function renderRecords(game) {
       </div>
     `;
   }).join("");
+
 }
 
 // 1秒ごとのタイマー専用（ボタンを消さずに数値だけ更新する）
@@ -1869,10 +1924,10 @@ export function renderGame(game, state, handlers) {
   renderDinoList(game, state, handlers);
   renderBreedingEggs(game, handlers);
   renderWildEggs(game, handlers);
-  renderDex(game);
+  renderDex(game, state);
   updateBreedBadge(game);
   renderBreedingStage(game, state.selectedMale, state.selectedFemale);
-  renderRecords(game);
+  renderRecords(game, state);
   renderTreasures(game);
   renderFacility(game, handlers);
   renderExpeditionTab(game, handlers);

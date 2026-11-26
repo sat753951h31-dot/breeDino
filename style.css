@@ -3875,3 +3875,211 @@ button{
   margin: 6px 0 0 0;
   text-align: center;
 }
+
+/* =========================================
+   全タブ共通：セクション見出し ＆ ヘッダーバー装飾
+========================================= */
+
+/* 1. 各タブ最上部のメインヘッダー（タイトル ＋ Tipsボタンの統合バー） */
+.tab-panel > .breeding-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 10px 14px;
+  margin: 4px 0 14px 0;
+  background: linear-gradient(90deg, #f1f8e9 0%, #fffdf7 100%);
+  border: 1px solid #c5e1a5;
+  border-left: 6px solid #2e7d32;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(46, 125, 50, 0.06);
+}
+
+.tab-panel > .breeding-header h2 {
+  margin: 0;
+  font-size: 1.22em;
+  font-weight: 800;
+  color: #1b5e20;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 交配ステージ内のヘッダー（恐竜交配 ＋ 3ボタン） */
+.breeding-stage .breeding-header {
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 2px solid #f0e6d2;
+}
+
+.breeding-stage .breeding-header h2 {
+  font-size: 1.2em;
+  color: #ad1457;
+}
+
+/* 2. タブ内の単独 h2 見出し（プレイレコード・実績一覧・拡張設備など） */
+.tab-panel > h2 {
+  position: relative;
+  margin: 22px 0 12px 0;
+  padding: 8px 14px;
+  font-size: 1.15em;
+  font-weight: 800;
+  color: #263238;
+  background: linear-gradient(90deg, #f5f7fa 0%, #ffffff 100%);
+  border: 1px solid #e0e6ed;
+  border-left: 5px solid #ff9800;
+  border-radius: 8px;
+}
+
+/* 3. サブセクション見出し（交配卵・野生の卵・待機恐竜・ログなど） */
+.tab-panel > h3,
+.wild-egg-header,
+.exp-section-header {
+  margin: 18px 0 10px 0;
+  padding: 6px 12px;
+  background-color: #f8fafc;
+  border-left: 4px solid #64b5f6;
+  border-bottom: 1px solid #e2e8f0;
+  border-radius: 0 6px 6px 0;
+}
+
+.tab-panel > h3,
+.wild-egg-header h3,
+.exp-section-header h2,
+.exp-section-header h3 {
+  margin: 0;
+  font-size: 1.05em;
+  font-weight: bold;
+  color: #1e293b;
+}
+
+/* 説明文（.tab-desc）も見出しバーと馴染ませる */
+.tab-panel > .tab-desc {
+  margin: -6px 0 14px 4px;
+  font-size: 0.86em;
+  color: #546e7a;
+  line-height: 1.5;
+}
+
+/* スマホ幅での見出し文字サイズ調整 */
+@media (max-width: 768px) {
+  .tab-panel > .breeding-header {
+    padding: 9px 10px;
+  }
+
+  .tab-panel > .breeding-header h2 {
+    font-size: 1.08em;
+  }
+
+  .tab-panel > h2 {
+    font-size: 1.05em;
+    padding: 7px 10px;
+  }
+}
+
+/* =========================================
+   実績タブ：全体進捗サマリーカード
+========================================= */
+.ach-summary-card {
+  background: linear-gradient(90deg, #fffdf5 0%, #fff8e1 100%);
+  border: 1px solid #ffe082;
+  border-left: 5px solid #ffb300;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 6px rgba(255, 179, 0, 0.08);
+}
+
+.ach-summary-card.is-complete {
+  background: linear-gradient(90deg, #fff8e1 0%, #fce4ec 100%);
+  border-color: #ff8f00;
+}
+
+.ach-summary-card .bar-bg {
+  margin-bottom: 0;
+}
+
+.ach-fill {
+  background: linear-gradient(90deg, #ffb300 0%, #ff6f00 100%);
+}
+
+/* =========================================
+   実績タブ：達成状況フィルターバー
+========================================= */
+.ach-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 0.9em;
+}
+
+.ach-filter-bar label {
+  font-weight: bold;
+  color: #495057;
+  white-space: nowrap;
+}
+
+.ach-filter-bar select {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  background-color: #ffffff;
+  font-size: 0.95em;
+}
+
+@media (max-width: 768px) {
+  .ach-filter-bar {
+    justify-content: space-between;
+  }
+  .ach-filter-bar select {
+    flex: 1;
+    max-width: 180px;
+  }
+}
+
+/* =========================================
+   図鑑タブ：2連フィルターバー（発見状況 ＆ タイプ）
+========================================= */
+.dex-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px 14px;
+  box-sizing: border-box;
+}
+
+.dex-filter-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .dex-filter-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .dex-filter-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .dex-filter-item select {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
