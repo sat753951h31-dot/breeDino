@@ -1629,8 +1629,10 @@ function rollGachaDino(isPremium = false) {
 
   const genBaseMax = 20 + generation * 5;
   const maxAllowedBonus = generation * 10;
-  const randomBonus = Math.floor(Math.random() * (maxAllowedBonus + 1));
-  const maxLevel = genBaseMax + randomBonus;
+  const bonus = isPremium
+    ? maxAllowedBonus
+    : Math.floor(Math.random() * (maxAllowedBonus + 1));
+  const maxLevel = genBaseMax + bonus;
 
   const uid = (typeof crypto !== "undefined" && crypto.randomUUID)
     ? crypto.randomUUID()
