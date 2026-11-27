@@ -1712,13 +1712,19 @@ function handleAdjustEv(statKey, delta) {
   update();
 }
 
-// 📊 努力値振り分けのリセット（獲得済みポイントはすべて手元に戻る）
+// 📊 努力値振り分けのリセット（確認ポップアップ付き）
 function handleResetEv() {
   const activeDino = game.dinos.find(d => d.uid === game.activeDinoId);
   if (!activeDino || !activeDino.ev) return;
 
   const used = (activeDino.ev.atk ?? 0) + (activeDino.ev.hp ?? 0) + (activeDino.ev.spd ?? 0);
   if (used === 0) return;
+
+  const ok = confirm(
+    `↺ ${activeDino.name} の努力値振り分け（計 ${used}pt）をリセットしますか？\n` +
+    `※獲得済みのポイントはすべて手元に戻ります`
+  );
+  if (!ok) return;
 
   activeDino.ev = { atk: 0, hp: 0, spd: 0 };
   const newStats = calculateStats(activeDino);
