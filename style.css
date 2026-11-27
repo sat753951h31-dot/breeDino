@@ -1,11 +1,18 @@
-/* スマホでのダブルタップズームを防止（連打時の誤拡大対策） */
-html,
-body,
-button,
-select,
-input {
+/* スマホでのダブルタップズーム・誤選択を完全防止（連打対策） */
+*,
+*::before,
+*::after {
   touch-action: manipulation;
 }
+
+button,
+.btn-ev-step,
+.btn-ev-reset {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 
 body{
   max-width:800px;
