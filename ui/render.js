@@ -177,6 +177,7 @@ function renderStatusAndLogs(game, selectedMale, selectedFemale) {
 
     const fruitCount = game.items?.traitFruit ?? 0;
     const elixirCount = game.items?.ivElixir ?? 0;
+    const sizePotionCount = game.items?.sizePotion ?? 0;
 
     foodStorage.innerHTML = `
       <div class="food-grid">
@@ -227,6 +228,21 @@ function renderStatusAndLogs(game, selectedMale, selectedFemale) {
             使う
           </button>
         </div>
+
+        <div class="food-card is-special-item ${sizePotionCount <= 0 ? "is-empty" : ""}">
+          <div class="food-icon">📏</div>
+          <div class="food-name">体格変化の薬</div>
+          <div class="food-count">所持: <strong>${sizePotionCount}</strong>個</div>
+          <div class="food-desc">体格をランダム変化</div>
+          <button
+            id="useSizePotionBtn"
+            class="btn-use-special"
+            ${!activeId || sizePotionCount <= 0 ? "disabled" : ""}
+          >
+            使う
+          </button>
+        </div>
+
       </div>
     `;
   }
@@ -625,6 +641,7 @@ function renderDinoList(game, state, handlers) {
     const dinoType = getDinoType(dino.speciesId, dino.name);
     const fruitCount = game.items?.traitFruit ?? 0;
     const elixirCount = game.items?.ivElixir ?? 0;
+    const sizePotionCount = game.items?.sizePotion ?? 0;
 
     const card = document.createElement("div");
     card.className = "dino-card";
@@ -748,6 +765,9 @@ function renderDinoList(game, state, handlers) {
         <button class="btn-card-special use-elixir-card-btn" data-id="${dino.uid}" ${elixirCount <= 0 ? "disabled" : ""} title="個体値強化の秘薬（全IV +10）">
           💉 秘薬 (${elixirCount})
         </button>
+        <button class="btn-card-special use-size-card-btn" data-id="${dino.uid}" ${sizePotionCount <= 0 ? "disabled" : ""} title="体格変化の薬（体格をランダム変化）">
+          📏 体格 (${sizePotionCount})
+        </button>
       </div>
 
       <!-- メイン設定＆交配選択ボタン -->
@@ -807,6 +827,9 @@ function renderDinoList(game, state, handlers) {
   });
   el.querySelectorAll(".btn-rainbow-pick").forEach(btn => {
     btn.onclick = () => handlers.onToggleRainbowPick(btn.dataset.id);
+  });
+  el.querySelectorAll(".use-size-card-btn").forEach(btn => {
+    btn.onclick = () => handlers.onUseSizePotion(btn.dataset.id);
   });
 }
 
@@ -1533,6 +1556,7 @@ function renderFacility(game, handlers) {
             else if (r.id === "craft_premium_meat") currentOwned = foods.premium ?? 0;
             else if (r.id === "craft_trait_fruit") currentOwned = game.items?.traitFruit ?? 0;
             else if (r.id === "craft_iv_elixir") currentOwned = game.items?.ivElixir ?? 0;
+            else if (r.id === "craft_size_potion") currentOwned = game.items?.sizePotion ?? 0;
 
             return `
               <div class="craft-card">
@@ -1944,5 +1968,8 @@ export function renderGame(game, state, handlers) {
 
   const elixirBtn = document.getElementById("useIvElixirBtn");
   if (elixirBtn) elixirBtn.onclick = () => handlers.onUseIvElixir();
+
+  const sizePotionBtn = document.getElementById("useSizePotionBtn");
+  if (sizePotionBtn) sizePotionBtn.onclick = () => handlers.onUseSizePotion();
 
 }

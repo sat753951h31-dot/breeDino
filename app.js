@@ -296,7 +296,24 @@ function checkAchievements() {
     if (current >= max) {
       game.unlockedAchievements.push(ach.id);
       if (ach.reward) {
-        game.foods[ach.reward.type] = (game.foods[ach.reward.type] ?? 0) + ach.reward.amount;
+        const { type, amount } = ach.reward;
+        if (type === "crystal") {
+          game.items ??= {};
+          game.items.breedCrystal = (game.items.breedCrystal ?? 0) + amount;
+          game.stats.crystalsEarned = (game.stats.crystalsEarned ?? 0) + amount;
+        } else if (type === "traitFruit") {
+          game.items ??= {};
+          game.items.traitFruit = (game.items.traitFruit ?? 0) + amount;
+        } else if (type === "ivElixir") {
+          game.items ??= {};
+          game.items.ivElixir = (game.items.ivElixir ?? 0) + amount;
+        } else if (type === "sizePotion") {
+          game.items ??= {};
+          game.items.sizePotion = (game.items.sizePotion ?? 0) + amount;
+        } else {
+          // raw / good / premium（お肉系）
+          game.foods[type] = (game.foods[type] ?? 0) + amount;
+        }
       }
       addLog(`🏆 【実績解除】「${ach.title}」を達成！報酬：${ach.rewardText}`);
       unlockedAny = true;
@@ -1536,6 +1553,10 @@ function handleCraftItem(recipeId) {
     game.items.ivElixir = (game.items.ivElixir ?? 0) + 1;
     newTotal = game.items.ivElixir;
     itemLabel = "💉 個体値強化の秘薬";
+  } else if (recipeId === "craft_size_potion") {
+    game.items.sizePotion = (game.items.sizePotion ?? 0) + 1;
+    newTotal = game.items.sizePotion;
+    itemLabel = "📏 体格変化の薬";
   }
 
   game.stats.itemsCrafted = (game.stats.itemsCrafted ?? 0) + 1;
@@ -1618,6 +1639,41 @@ function handleUseIvElixir(targetDinoId = game.activeDinoId) {
 
   addLog(`💉 【個体値強化】${targetDino.name} のIVが上昇！（ATK:${targetDino.atkIv} / HP:${targetDino.hpIv} / SPD:${targetDino.spdIv}）`);
   alert(`💉 個体値が強化されました！\n\nATK IV: ${targetDino.atkIv} / HP IV: ${targetDino.hpIv} / SPD IV: ${targetDino.spdIv}`);
+  update();
+}
+
+// 📏 体格変化の薬を使用（確認ポップアップ付き・ランダム変化）
+function handleUseSizePotion(targetDinoId = game.activeDinoId) {
+  if (!canAct()) return;
+  if ((game.items?.sizePotion ?? 0) <= 0) return;
+
+  const targetDino = game.dinos.find(d => d.uid === targetDinoId);
+  if (!targetDino) return;
+
+  const allSizes = ["small", "normal", "large", "giant"];
+  const candidates = allSizes.filter(s => s !== targetDino.size);
+  const nextSize = candidates[Math.floor(Math.random() * candidates.length)];
+
+  const currentLabel = getSizeLabel(targetDino.size);
+  const nextLabel = getSizeLabel(nextSize);
+
+  const ok = confirm(
+    `⚠️ 【貴重品の使用確認】\n` +
+    `「📏 体格変化の薬」を 1個 消費して、${targetDino.name} の体格を変化させますか？\n\n` +
+    `現在の体格：${currentLabel}\n` +
+    `※小型・中型・大型・巨大の中からランダムで別のサイズに変化します`
+  );
+  if (!ok) return;
+
+  game.items.sizePotion--;
+  game.stats.itemsUsed = (game.stats.itemsUsed ?? 0) + 1;
+  targetDino.size = nextSize;
+
+  const newStats = calculateStats(targetDino);
+  targetDino.currentHp = Math.min(newStats.hp, targetDino.currentHp);
+
+  addLog(`📏 【体格変化】${targetDino.name} の体格が「${currentLabel}」から「${nextLabel}」に変化した！`);
+  alert(`📏 体格が変化しました！\n\n新しい体格：${nextLabel}`);
   update();
 }
 
@@ -1939,6 +1995,7 @@ const handlers = {
   onRollGacha: (times, isPremium = false) => handleRollGacha(times, isPremium),
   onUseTraitFruit: (dinoId) => handleUseTraitFruit(typeof dinoId === "string" ? dinoId : game.activeDinoId),
   onUseIvElixir: (dinoId) => handleUseIvElixir(typeof dinoId === "string" ? dinoId : game.activeDinoId),
+  onUseSizePotion: (dinoId) => handleUseSizePotion(typeof dinoId === "string" ? dinoId : game.activeDinoId),
   onSetActive: (dinoId) => {
     if (getBusyExpeditionDinoIds().has(dinoId)) {
       alert("🏕️ 遠征中の恐竜は育成パートナーに設定できません！帰還を待ってください。");
@@ -2590,7 +2647,7 @@ const TIPS_DATA = {
     items: [
       {
         title: "1. 実績の達成と自動報酬",
-        desc: "条件を満たすと自動で実績が解除され、報酬のお肉が在庫へ直接加算されます。"
+        desc: "条件を満たすと自動で実績が解除され、報酬のお肉や結晶・貴重品アイテムが在庫へ直接加算されます。"
       },
       {
         title: "2. 周回（ワールドループ）の仕組み",

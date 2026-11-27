@@ -4083,3 +4083,33 @@ button{
     box-sizing: border-box;
   }
 }
+
+/* =========================================
+   貴重品3列レイアウト（果実・秘薬・体格）
+========================================= */
+.special-food-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.card-special-feed-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 4px;
+  margin-top: 5px;
+}
+
+@media (max-width: 768px) {
+  .special-food-grid {
+    gap: 6px;
+  }
+  .special-food-grid .food-name {
+    font-size: 0.78em;
+  }
+  .btn-card-special {
+    font-size: 0.72em;
+    padding: 5px 1px;
+  }
+}

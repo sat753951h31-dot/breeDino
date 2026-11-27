@@ -77,7 +77,7 @@ export function loadGame() {
     save.stats.itemsCrafted ??= 0;
     save.stats.itemsUsed ??= 0;
     save.stats.gachaRolls ??= 0;
-
+    save.items.sizePotion ??= 0;
     save.worldLoop ??= 1;
     save.stats.maxWorldLoop ??= 1;
 
@@ -139,6 +139,7 @@ export function loadGame() {
     itemsCrafted: 0,
     itemsUsed: 0,
     gachaRolls: 0,
+    sizePotion: 0,
     facility: {
       incubatorLevel: 0,
       trainingLevel: 0,

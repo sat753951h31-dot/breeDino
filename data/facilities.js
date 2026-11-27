@@ -92,6 +92,14 @@ export const CRAFT_RECIPES = [
     desc: "相棒の個体値（ATK・HP・SPD IV）をすべて +10 する（通常上限100 / 変異体上限150）",
     cost: { stone: 25, ore: 10 },
     costText: "🪨 石材×25 ＋ 🔮 鉱石×10"
+  },
+  {
+    id: "craft_size_potion",
+    icon: "📏",
+    name: "体格変化の薬 ×1",
+    desc: "相棒の体格（小型・中型・大型・巨大）をランダムで別のサイズへ変化させる",
+    cost: { wood: 15, ore: 5 },
+    costText: "🪵 木材×15 ＋ 🔮 鉱石×5"
   }
 ];
 
