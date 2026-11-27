@@ -1609,7 +1609,7 @@ function handleUseTraitFruit(targetDinoId = game.activeDinoId) {
   update();
 }
 
-// 💉 個体値強化の秘薬を使用（通常個体：上限100 ／ ミュータント：上限150）
+// 💉 個体値強化の秘薬を使用（通常個体：上限100 ／ ミュータント：上限150 ／ 超過IVは切り下げ防止）
 function handleUseIvElixir(targetDinoId = game.activeDinoId) {
   if (!canAct()) return;
   if ((game.items?.ivElixir ?? 0) <= 0) return;
@@ -1620,7 +1620,11 @@ function handleUseIvElixir(targetDinoId = game.activeDinoId) {
   // ミュータントなら上限150、通常個体は上限100
   const maxIv = targetDino.mutant ? 150 : 100;
 
-  if (targetDino.atkIv >= maxIv && targetDino.hpIv >= maxIv && targetDino.spdIv >= maxIv) {
+  const curAtk = targetDino.atkIv ?? 0;
+  const curHp = targetDino.hpIv ?? 0;
+  const curSpd = targetDino.spdIv ?? 0;
+
+  if (curAtk >= maxIv && curHp >= maxIv && curSpd >= maxIv) {
     const extraHint = !targetDino.mutant ? "\n（※突然変異個体【MUTANT】のみ上限150まで強化できます）" : "";
     alert(`${targetDino.name} の個体値（IV）はすでに上限（${maxIv}）に達しています！${extraHint}`);
     return;
@@ -1629,16 +1633,18 @@ function handleUseIvElixir(targetDinoId = game.activeDinoId) {
   const ok = confirm(
     `⚠️ 【貴重品の使用確認】\n` +
     `「💉 個体値強化の秘薬」を 1個 消費して、${targetDino.name} を強化しますか？\n\n` +
-    `現在の個体値：ATK ${targetDino.atkIv} / HP ${targetDino.hpIv} / SPD ${targetDino.spdIv}\n` +
-    `※すべての個体値が +10 上昇します（上限${maxIv}）`
+    `現在の個体値：ATK ${curAtk} / HP ${curHp} / SPD ${curSpd}\n` +
+    `※上限（${maxIv}）未満の個体値が +10 上昇します（すでに${maxIv}以上の数値は維持されます）`
   );
   if (!ok) return;
 
   game.items.ivElixir--;
   game.stats.itemsUsed = (game.stats.itemsUsed ?? 0) + 1;
-  targetDino.atkIv = Math.min(maxIv, (targetDino.atkIv ?? 0) + 10);
-  targetDino.hpIv = Math.min(maxIv, (targetDino.hpIv ?? 0) + 10);
-  targetDino.spdIv = Math.min(maxIv, (targetDino.spdIv ?? 0) + 10);
+
+  // 元の数値より下がらないよう Math.max で保護
+  targetDino.atkIv = Math.max(curAtk, Math.min(maxIv, curAtk + 10));
+  targetDino.hpIv = Math.max(curHp, Math.min(maxIv, curHp + 10));
+  targetDino.spdIv = Math.max(curSpd, Math.min(maxIv, curSpd + 10));
 
   const newStats = calculateStats(targetDino);
   targetDino.currentHp = Math.min(newStats.hp, targetDino.currentHp + 50);
