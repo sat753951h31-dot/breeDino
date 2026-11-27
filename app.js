@@ -17,6 +17,7 @@ import { AREA_BOSSES } from "./data/bosses.js";
 import { AREA_EXPEDITIONS } from "./data/expeditions.js";
 import { playExploreSequence } from "./ui/battleStage.js";
 import { FACILITIES, MAX_FACILITY_LEVEL, getFacilityBonuses, CRAFT_RECIPES, getMonumentUpgradeCost } from "./data/facilities.js";
+import { DEX_SPECIES } from "./data/dexSpecies.js";
 
 let game = loadGame();
 syncTreasures(game.treasures);
@@ -1290,21 +1291,13 @@ function handleStartExpedition() {
   update();
 }
 
-function handleClaimExpedition(expId) {
-  if (!canAct()) return;
-  game.expeditions ??= [];
-  const index = game.expeditions.findIndex(e => e.id === expId);
-  if (index === -1) return;
-
-  const exp = game.expeditions[index];
-  if (Date.now() < exp.endAt) return;
-
-  const course = AREA_EXPEDITIONS.find(c => c.areaLevel === exp.areaLevel) ?? AREA_EXPEDITIONS[0];
+// 1部隊分の遠征報酬を計算・付与して結果オブジェクトを返す共通ヘルパー
+function processSingleExpeditionReward(exp) {
+  const course = AREA_EXPEDITIONS.find(c => c.areaLevel === exp.areaLevel) ?? AREA_EXPEDITIONS.at(0);
   const members = exp.memberIds
     .map(id => game.dinos.find(d => d.uid === id))
     .filter(Boolean);
 
-  // チーム戦力と特性「幸運」から報酬倍率を計算
   let totalPower = 0;
   let luckyCount = 0;
   members.forEach(d => {
@@ -1314,7 +1307,7 @@ function handleClaimExpedition(expId) {
   });
 
   const powerMult = Math.min(2.5, 1 + Math.floor(totalPower / 450) * 0.25);
-  const luckBonus = luckyCount * 0.10; // 1体ごとに +10%（3体で +30% 重複）
+  const luckBonus = luckyCount * 0.10;
   const rewards = [];
 
   game.materials ??= { wood: 0, stone: 0, ore: 0 };
@@ -1361,7 +1354,6 @@ function handleClaimExpedition(expId) {
       rewards.push(`🥚 野生卵(🟣 紫卵)`);
     }
   } else if (course.areaLevel === 5) {
-    // Lv.5 総力遠征
     const ore = Math.floor((3 + Math.floor(Math.random() * 3)) * powerMult);
     const stone = Math.floor((5 + Math.floor(Math.random() * 3)) * powerMult);
     const crystal = Math.floor(5 * (powerMult >= 1.5 ? 1.5 : 1));
@@ -1376,7 +1368,6 @@ function handleClaimExpedition(expId) {
     game.wildEggs.push(createWildEgg(size, rarity, currentHatchMult()));
     rewards.push(`🔮 鉱石×${ore}`, `🪨 石材×${stone}`, `🥚 野生卵(${getEggRarityLabel(rarity)})`, `💎 結晶×${crystal}`, `✨ 極上肉×${prem}`);
   } else if (course.areaLevel === 6) {
-    // Lv.6 深海神殿の宝物遠征
     const ore = Math.floor((5 + Math.floor(Math.random() * 4)) * powerMult);
     const stone = Math.floor((6 + Math.floor(Math.random() * 4)) * powerMult);
     const crystal = Math.floor(8 * (powerMult >= 1.5 ? 1.5 : 1));
@@ -1392,8 +1383,7 @@ function handleClaimExpedition(expId) {
     rewards.push(`🔮 鉱石×${ore}`, `🪨 石材×${stone}`, `🥚 野生卵(${getEggRarityLabel(rarity)})`, `💎 結晶×${crystal}`, `✨ 極上肉×${prem}`);
   }
 
-  // 参加メンバーへの経験値付与
-  const baseMemberExp = Math.floor((course.durationMs / 1000) * 0.5); // 3分で90EXP 〜 40分で1200EXP
+  const baseMemberExp = Math.floor((course.durationMs / 1000) * 0.5);
   const fBonus = getFacilityBonuses(game.facility);
   const levelUpNotices = [];
 
@@ -1410,21 +1400,104 @@ function handleClaimExpedition(expId) {
     }
   });
 
-  game.expeditions.splice(index, 1);
   game.stats.expeditionsDone = (game.stats.expeditionsDone ?? 0) + 1;
 
-  const rewardText = rewards.join("、");
-  const luckLogText = luckyCount > 0 ? ` / 🍀幸運+${luckyCount * 10}%` : "";
-  const lvUpText = levelUpNotices.length > 0
-    ? `\n🎉 レベルアップ：${levelUpNotices.join("、")}`
+  return {
+    course,
+    rewards,
+    baseMemberExp,
+    luckyCount,
+    levelUpNotices
+  };
+}
+
+// 個別受け取り
+function handleClaimExpedition(expId) {
+  if (!canAct()) return;
+  game.expeditions ??= [];
+  const index = game.expeditions.findIndex(e => e.id === expId);
+  if (index === -1) return;
+
+  const exp = game.expeditions[index];
+  if (Date.now() < exp.endAt) return;
+
+  const res = processSingleExpeditionReward(exp);
+  game.expeditions.splice(index, 1);
+
+  const rewardText = res.rewards.join("、");
+  const luckLogText = res.luckyCount > 0 ? ` / 🍀幸運+${res.luckyCount * 10}%` : "";
+  const lvUpText = res.levelUpNotices.length > 0
+    ? `\n🎉 レベルアップ：${res.levelUpNotices.join("、")}`
     : "";
 
-  addLog(`🏕️ 【${course.name} 帰還】${rewardText} を獲得！（参加メンバー基本 EXP +${baseMemberExp}${luckLogText}）`);
+  addLog(`🏕️ 【${res.course.name} 帰還】${rewardText} を獲得！（参加メンバー基本 EXP +${res.baseMemberExp}${luckLogText}）`);
 
   alert(
     `🏕️ 遠征隊が帰還しました！\n\n` +
     `獲得報酬：${rewardText}\n` +
-    `参加メンバー経験値：基本 EXP +${baseMemberExp}${lvUpText}`
+    `参加メンバー経験値：基本 EXP +${res.baseMemberExp}${lvUpText}`
+  );
+
+  update();
+}
+
+// 🎁 一括受け取り ＆ 🔄 受け取って同じメンバーで再遠征（redeploy = true で再出発）
+function handleClaimAllExpeditions(redeploy = false) {
+  if (!canAct()) return;
+  game.expeditions ??= [];
+
+  const now = Date.now();
+  const doneExps = game.expeditions.filter(e => e.endAt <= now);
+  if (doneExps.length === 0) return;
+
+  const unlockedSet = new Set(getUnlockedExpeditionLevels());
+  const summaryLines = [];
+  const allLevelUps = [];
+  const relaunchedList = [];
+
+  doneExps.forEach(exp => {
+    const res = processSingleExpeditionReward(exp);
+    summaryLines.push(`・${res.course.icon} ${res.course.name}：${res.rewards.join("、")}`);
+    allLevelUps.push(...res.levelUpNotices);
+
+    if (redeploy) {
+      // 育成中になった個体や引退済み個体を除いて有効なメンバーで再出発
+      const validMembers = exp.memberIds.filter(
+        id => id !== game.activeDinoId && game.dinos.some(d => d.uid === id)
+      );
+      if (validMembers.length > 0 && unlockedSet.has(exp.areaLevel)) {
+        relaunchedList.push({
+          id: crypto.randomUUID(),
+          areaLevel: exp.areaLevel,
+          memberIds: validMembers,
+          endAt: Date.now() + res.course.durationMs
+        });
+      }
+    }
+  });
+
+  // 帰還済み部隊をリストから外し、再遠征分があればそのまま追加
+  game.expeditions = [
+    ...game.expeditions.filter(e => e.endAt > now),
+    ...relaunchedList
+  ];
+
+  const lvUpText = allLevelUps.length > 0
+    ? `\n\n🎉 レベルアップ：${allLevelUps.join("、")}`
+    : "";
+
+  const redeployMsg = redeploy
+    ? `\n\n🔄 ${relaunchedList.length}部隊 が同じ遠征先へ再出発しました！`
+    : "";
+
+  addLog(
+    `🏕️ 【遠征一括帰還】${doneExps.length}部隊 の報酬を一括受け取りした！` +
+    (redeploy ? `（そのまま ${relaunchedList.length}部隊 が再遠征へ出発！）` : "")
+  );
+
+  alert(
+    `🎁 ${doneExps.length}部隊 の遠征報酬を受け取りました！\n\n` +
+    `${summaryLines.join("\n")}${lvUpText}${redeployMsg}`
   );
 
   update();
@@ -2062,6 +2135,8 @@ const handlers = {
   onCraftItem: handleCraftItem,
   onAdjustEv: handleAdjustEv,
   onResetEv: handleResetEv,
+  onClaimAllExpeditions: () => handleClaimAllExpeditions(false),
+  onClaimAndRedeployAll: () => handleClaimAllExpeditions(true),
   onRollGacha: (times, isPremium = false) => handleRollGacha(times, isPremium),
   onUseTraitFruit: (dinoId) => handleUseTraitFruit(typeof dinoId === "string" ? dinoId : game.activeDinoId),
   onUseIvElixir: (dinoId) => handleUseIvElixir(typeof dinoId === "string" ? dinoId : game.activeDinoId),
@@ -2858,6 +2933,161 @@ document.getElementById("recipeListBtn")?.addEventListener("click", () => {
     `🧬 特殊交配レシピ（発見済: ${foundCount} / ${SPECIAL_BREEDS.length}種）`,
     listHtml
   );
+});
+
+// 🔍 指定した種族IDから最適な両親（♂・♀）を検索して返すヘルパー
+function findBestParentsForSpecies(targetSpeciesId) {
+  const busyIds = getBusyExpeditionDinoIds();
+  const availableDinos = game.dinos.filter(d => !busyIds.has(d.uid));
+  const rarityRank = { rainbow: 4, purple: 3, blue: 2, white: 1 };
+
+  const findBestPair = (speciesA, speciesB) => {
+    const males = availableDinos.filter(d => d.sex === "male" && (d.speciesId === speciesA || d.speciesId === speciesB));
+    const females = availableDinos.filter(d => d.sex === "female" && (d.speciesId === speciesA || d.speciesId === speciesB));
+
+    let bestPair = null;
+
+    for (const m of males) {
+      for (const f of females) {
+        const isValidCombo = speciesA === speciesB
+          ? (m.speciesId === speciesA && f.speciesId === speciesB)
+          : ((m.speciesId === speciesA && f.speciesId === speciesB) || (m.speciesId === speciesB && f.speciesId === speciesA));
+
+        if (!isValidCombo) continue;
+
+        const genM = m.generation ?? 0;
+        const genF = f.generation ?? 0;
+        const sameGen = genM === genF ? 1 : 0;
+        const baseGen = Math.min(genM, genF);
+        const maxGen = Math.max(genM, genF);
+        const rarityScore = (rarityRank[m.rarityType] ?? 1) + (rarityRank[f.rarityType] ?? 1);
+        const ivScore = (m.atkIv + m.hpIv + m.spdIv) + (f.atkIv + f.hpIv + f.spdIv);
+
+        const candidate = { male: m, female: f, sameGen, baseGen, maxGen, rarityScore, ivScore };
+
+        if (!bestPair) {
+          bestPair = candidate;
+          continue;
+        }
+
+        if (candidate.sameGen !== bestPair.sameGen) {
+          if (candidate.sameGen > bestPair.sameGen) bestPair = candidate;
+        } else if (candidate.baseGen !== bestPair.baseGen) {
+          if (candidate.baseGen > bestPair.baseGen) bestPair = candidate;
+        } else if (candidate.maxGen !== bestPair.maxGen) {
+          if (candidate.maxGen > bestPair.maxGen) bestPair = candidate;
+        } else if (candidate.rarityScore !== bestPair.rarityScore) {
+          if (candidate.rarityScore > bestPair.rarityScore) bestPair = candidate;
+        } else if (candidate.ivScore > bestPair.ivScore) {
+          bestPair = candidate;
+        }
+      }
+    }
+
+    return bestPair;
+  };
+
+  // 1. 同一種族同士（targetSpeciesId × targetSpeciesId）で検索
+  const samePair = findBestPair(targetSpeciesId, targetSpeciesId);
+  if (samePair) {
+    return {
+      ...samePair,
+      routeType: "same",
+      routeLabel: "同種交配"
+    };
+  }
+
+  // 2. 特殊配合レシピの対象種なら親組み合わせで検索
+  const specialRecipe = SPECIAL_BREEDS.find(b => b.result.id === targetSpeciesId);
+  if (specialRecipe) {
+    const specialPair = findBestPair(specialRecipe.parents[0], specialRecipe.parents[1]);
+    if (specialPair) {
+      return {
+        ...specialPair,
+        routeType: "special",
+        routeLabel: `✨ 特殊配合（${getDefaultSpeciesName(specialRecipe.parents[0])} × ${getDefaultSpeciesName(specialRecipe.parents[1])}）`
+      };
+    }
+  }
+
+  return null;
+}
+
+// 🔍 逆引き交配：選んだ種族のベストペアをスロットにセット
+function selectBestParentsForSpecies(targetSpeciesId) {
+  const targetName = getDefaultSpeciesName(targetSpeciesId);
+  const picked = findBestParentsForSpecies(targetSpeciesId);
+
+  if (!picked) {
+    alert(
+      `🔍 逆引き交配：該当なし\n\n` +
+      `「${targetName}」を交配できる適切なオス・メスのペアが待機メンバーに見つかりませんでした。\n` +
+      `（※遠征中の恐竜は対象外です）`
+    );
+    return;
+  }
+
+  selectedMale = picked.male.uid;
+  selectedFemale = picked.female.uid;
+
+  if (guideModal) guideModal.style.display = "none";
+
+  addLog(
+    `🔍 【逆引き交配】目標「${targetName}」→ ♂${picked.male.name}(F${picked.male.generation ?? 0}) × ♀${picked.female.name}(F${picked.female.generation ?? 0}) を自動選抜！（${picked.routeLabel}）`
+  );
+  update();
+}
+
+// 🔍 逆引き交配ボタン：ペア有無で色分けした取得済み図鑑モーダルを表示
+document.getElementById("reverseBreedBtn")?.addEventListener("click", () => {
+  const discovered = game.discoveredSpecies ?? [];
+  const ownedSpeciesList = DEX_SPECIES.filter(sp => discovered.includes(sp.id));
+
+  if (ownedSpeciesList.length === 0) {
+    alert("まだ図鑑に登録された恐竜がいません！");
+    return;
+  }
+
+  let readyCount = 0;
+
+  const cardsHtml = ownedSpeciesList.map(sp => {
+    const match = findBestParentsForSpecies(sp.id);
+    if (match) readyCount++;
+
+    const stateClass = !match
+      ? "is-unavailable"
+      : match.routeType === "special"
+        ? "is-special-ready"
+        : "is-ready";
+
+    const statusBadge = !match
+      ? "⚠️ ペア不足"
+      : match.routeType === "special"
+        ? `✨ 特殊配合可 (F${match.baseGen + 1}誕生)`
+        : `✅ 同種ペアあり (F${match.baseGen + 1}誕生)`;
+
+    return `
+      <button type="button" class="btn-reverse-species ${stateClass}" data-species-id="${sp.id}">
+        <span class="rev-sp-name">${sp.special ? "✨ " : ""}${sp.name}</span>
+        <span class="rev-sp-status">${statusBadge}</span>
+      </button>
+    `;
+  }).join("");
+
+  const listHtml = `
+    <p class="guide-modal-sub">
+      ✅ <strong>緑・紫のカード</strong>は現在ペアが揃っています（タップで即セット / 交配可能: <strong>${readyCount}</strong>種）
+    </p>
+    <div class="reverse-dex-grid">
+      ${cardsHtml}
+    </div>
+  `;
+
+  openGuideModal(`🔍 逆引き交配（交配可能: ${readyCount} / ${ownedSpeciesList.length}種）`, listHtml);
+
+  guideModalBody?.querySelectorAll(".btn-reverse-species").forEach(btn => {
+    btn.onclick = () => selectBestParentsForSpecies(btn.dataset.speciesId);
+  });
 });
 
 // 早見表モーダルを閉じる（閉じるボタン ＆ 背景タップ）

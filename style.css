@@ -4300,3 +4300,157 @@ button{
     font-size: 0.92em;
   }
 }
+
+/* =========================================
+   🔍 逆引き交配ボタン ＆ 選択モーダル
+========================================= */
+.btn-help-pill.is-reverse {
+  color: #0277bd;
+  background-color: #e1f5fe;
+  border-color: #81d4fa;
+}
+
+.guide-modal-sub {
+  margin: 0 0 8px 0;
+  font-size: 0.85em;
+  color: #555;
+}
+
+.reverse-dex-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.btn-reverse-species {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 9px 10px;
+  margin: 0;
+  text-align: left;
+  background-color: #ffffff;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-reverse-species:hover {
+  background-color: #e1f5fe;
+  border-color: #4fc3f7;
+}
+
+.btn-reverse-species.is-special {
+  background-color: #fdf7ff;
+  border-color: #ce93d8;
+}
+
+.btn-reverse-species.is-special:hover {
+  background-color: #f3e5f5;
+}
+
+.rev-sp-name {
+  font-weight: bold;
+  font-size: 0.92em;
+  color: #263238;
+}
+
+.rev-sp-tag {
+  font-size: 0.72em;
+  color: #607d8b;
+}
+
+/* =========================================
+   🔍 逆引き交配モーダル：ペア成立状態の色分け
+========================================= */
+
+/* ✅ 同種ペアあり（グリーン強調） */
+.btn-reverse-species.is-ready {
+  background-color: #f1f8e9;
+  border: 2px solid #81c784;
+}
+
+.btn-reverse-species.is-ready:hover {
+  background-color: #dcedc8;
+}
+
+.btn-reverse-species.is-ready .rev-sp-status {
+  color: #2e7d32;
+  font-weight: bold;
+}
+
+/* ✨ 特殊配合ペアあり（パープル強調） */
+.btn-reverse-species.is-special-ready {
+  background-color: #f3e5f5;
+  border: 2px solid #ba68c8;
+}
+
+.btn-reverse-species.is-special-ready:hover {
+  background-color: #e1bee7;
+}
+
+.btn-reverse-species.is-special-ready .rev-sp-status {
+  color: #6a1b9a;
+  font-weight: bold;
+}
+
+/* ⚠️ ペア不足（落ち着いたグレー表示） */
+.btn-reverse-species.is-unavailable {
+  background-color: #f5f5f5;
+  border: 1px dashed #cfd8dc;
+  opacity: 0.65;
+}
+
+.btn-reverse-species.is-unavailable .rev-sp-name {
+  color: #78909c;
+}
+
+.btn-reverse-species.is-unavailable .rev-sp-status {
+  color: #90a4ae;
+}
+
+.rev-sp-status {
+  font-size: 0.74em;
+}
+
+/* =========================================
+   遠征：一括受け取り ＆ 再遠征ボタン
+========================================= */
+.exp-bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.btn-exp-redeploy {
+  padding: 8px 14px;
+  font-size: 0.92em;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(90deg, #00897b 0%, #1565c0 100%);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #0d47a1;
+  white-space: nowrap;
+}
+
+.btn-exp-redeploy:hover {
+  filter: brightness(1.08);
+}
+
+@media (max-width: 768px) {
+  .exp-bulk-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .exp-bulk-actions button {
+    width: 100%;
+    padding: 9px 4px;
+    font-size: 0.85em;
+  }
+}

@@ -1746,16 +1746,30 @@ function renderExpeditionTab(game, handlers) {
 
   // 1. 出撃中の遠征チーム一覧
   const now = Date.now();
+  const doneCount = activeExps.filter(e => e.endAt <= now).length;
+
   activeEl.innerHTML = `
     <div class="exp-section-header">
-      <h2>🏕️ 遠征中の部隊（${activeExps.length} / ${maxTeams} 枠稼働中）</h2>
-      <small>※エリア100%制覇数に応じて同時派遣枠が増えます</small>
+      <div>
+        <h2>🏕️ 遠征中の部隊（${activeExps.length} / ${maxTeams} 枠稼働中）</h2>
+        <small>※エリア100%制覇数に応じて同時派遣枠が増えます</small>
+      </div>
+      ${doneCount > 0 ? `
+        <div class="exp-bulk-actions">
+          <button id="claimAllExpBtn" class="btn-exp-claim">
+            🎁 一括で受け取る (${doneCount})
+          </button>
+          <button id="redeployAllExpBtn" class="btn-exp-redeploy">
+            🔄 受け取って再遠征 (${doneCount})
+          </button>
+        </div>
+      ` : ""}
     </div>
     ${activeExps.length === 0
       ? `<p class="empty-msg">現在出撃中の遠征隊はありません。</p>`
       : `<div class="active-exp-grid">
           ${activeExps.map(exp => {
-            const course = AREA_EXPEDITIONS.find(c => c.areaLevel === exp.areaLevel) ?? AREA_EXPEDITIONS[0];
+            const course = AREA_EXPEDITIONS.find(c => c.areaLevel === exp.areaLevel) ?? AREA_EXPEDITIONS.at(0);
             const remain = Math.max(0, Math.ceil((exp.endAt - now) / 1000));
             const isDone = remain <= 0;
             const memberNames = exp.memberIds
@@ -1781,9 +1795,15 @@ function renderExpeditionTab(game, handlers) {
     }
   `;
 
-  activeEl.querySelectorAll(".btn-exp-claim").forEach(btn => {
+  activeEl.querySelectorAll(".btn-exp-claim[data-id]").forEach(btn => {
     btn.onclick = () => handlers.onClaimExpedition(btn.dataset.id);
   });
+
+  const claimAllBtn = document.getElementById("claimAllExpBtn");
+  if (claimAllBtn) claimAllBtn.onclick = handlers.onClaimAllExpeditions;
+
+  const redeployAllBtn = document.getElementById("redeployAllExpBtn");
+  if (redeployAllBtn) redeployAllBtn.onclick = handlers.onClaimAndRedeployAll;
 
   const busyIds = new Set();
   activeExps.forEach(e => e.memberIds.forEach(id => busyIds.add(id)));
