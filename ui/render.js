@@ -259,7 +259,7 @@ function renderStatusAndLogs(game, selectedMale, selectedFemale) {
 }
 
 // 3-A. 育成中の恐竜ステータス描画（左カード上部）
-function renderActiveDino(game) {
+function renderActiveDino(game, handlers) {
   const el = document.getElementById("activeDino");
   if (!el) return;
 
@@ -279,6 +279,20 @@ function renderActiveDino(game) {
   const bloodlineBonus = getBloodlineBonus(activeDino);
   const trait = getTraitData(activeDino.trait);
   const dinoType = getDinoType(activeDino.speciesId, activeDino.name);
+
+  // 👇 el.innerHTML より前に親密度と努力値を計算する
+  const affection = Math.min(100, activeDino.affection ?? 0);
+  const affectionBonus = Math.round(affection * 0.2);
+  const evEarned = Math.min(100, activeDino.evEarned ?? 0);
+  const ev = activeDino.ev ?? { atk: 0, hp: 0, spd: 0 };
+  const evUsed = (ev.atk ?? 0) + (ev.hp ?? 0) + (ev.spd ?? 0);
+  const evRemain = Math.max(0, evEarned - evUsed);
+
+  const evRows = [
+    { key: "atk", label: "⚔️ 攻撃IV", val: ev.atk ?? 0 },
+    { key: "hp",  label: "❤️ HP IV",  val: ev.hp ?? 0 },
+    { key: "spd", label: "💨 素早IV", val: ev.spd ?? 0 }
+  ];
 
   el.innerHTML = `
     <div class="partner-header">
@@ -330,7 +344,44 @@ function renderActiveDino(game) {
     <div class="active-trait-desc">
       <strong>${trait.icon} ${trait.name}：</strong>${trait.desc}
     </div>
+
+    <!-- 💖 親密度 ＆ 📊 努力値カスタマイズパネル -->
+    <div class="bond-ev-panel">
+      <div class="gauge-label">
+        <span>💖 親密度（与ダメ <strong>+${affectionBonus}%</strong>）</span>
+        <span><strong>${affection}</strong> / 100</span>
+      </div>
+      <div class="bar-bg mini-bar">
+        <div class="bar-fill affection-fill" style="width: ${affection}%"></div>
+      </div>
+
+      <div class="ev-header-row">
+        <span>📊 努力値（残り: <strong>${evRemain}</strong> / 獲得: ${evEarned} <small>※最大100</small>）</span>
+        <button id="resetEvBtn" type="button" class="btn-ev-reset" ${evUsed === 0 ? "disabled" : ""}>↺ リセット</button>
+      </div>
+
+      <div class="ev-rows">
+        ${evRows.map(row => `
+          <div class="ev-row">
+            <span class="ev-stat-name">${row.label}: <strong>+${row.val}</strong></span>
+            <div class="ev-step-btns">
+              <button type="button" class="btn-ev-step" data-stat="${row.key}" data-delta="-10" ${row.val <= 0 ? "disabled" : ""}>-10</button>
+              <button type="button" class="btn-ev-step" data-stat="${row.key}" data-delta="-1" ${row.val <= 0 ? "disabled" : ""}>-1</button>
+              <button type="button" class="btn-ev-step is-plus" data-stat="${row.key}" data-delta="1" ${evRemain <= 0 ? "disabled" : ""}>+1</button>
+              <button type="button" class="btn-ev-step is-plus" data-stat="${row.key}" data-delta="10" ${evRemain <= 0 ? "disabled" : ""}>+10</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
   `;
+
+  const resetEvBtn = document.getElementById("resetEvBtn");
+  if (resetEvBtn) resetEvBtn.onclick = handlers.onResetEv;
+
+  el.querySelectorAll(".btn-ev-step").forEach(btn => {
+    btn.onclick = () => handlers.onAdjustEv(btn.dataset.stat, Number(btn.dataset.delta));
+  });
 }
 
 // 3-B. 探索エリア選択＆出発ボタン描画（右カード上部）
@@ -636,6 +687,10 @@ function renderDinoList(game, state, handlers) {
     const nextExp = requiredExp(dino.level);
     const expPercent = isMaxLv ? 100 : Math.max(0, Math.min(100, (dino.exp / nextExp) * 100));
     const totalIv = dino.atkIv + dino.hpIv + dino.spdIv;
+    const affection = Math.min(100, dino.affection ?? 0);
+    const evEarned = Math.min(100, dino.evEarned ?? 0);
+    const ev = dino.ev ?? { atk: 0, hp: 0, spd: 0 };
+    const evUsed = (ev.atk ?? 0) + (ev.hp ?? 0) + (ev.spd ?? 0);
     const bloodlineBonus = getBloodlineBonus(dino);
     const trait = getTraitData(dino.trait);
     const dinoType = getDinoType(dino.speciesId, dino.name);
@@ -726,23 +781,36 @@ function renderDinoList(game, state, handlers) {
       </div>
 
       <!-- ステータス＆個体値（IV）3列グリッド -->
+      <!-- ステータス＆個体値（IV）・努力値 3列グリッド -->
       <div class="card-stat-grid">
         <div class="stat-box">
           <div class="stat-label">⚔️ 攻撃</div>
           <div class="stat-val">${Math.floor(stats.atk)}</div>
-          <div class="stat-iv ${dino.atkIv >= 100 ? "iv-high" : ""}">IV: ${dino.atkIv}</div>
+          <div class="stat-iv ${dino.atkIv >= 100 ? "iv-high" : ""}">
+            IV: ${dino.atkIv}${ev.atk > 0 ? `<span class="ev-plus-tag">+${ev.atk}</span>` : ""}
+          </div>
         </div>
         <div class="stat-box">
           <div class="stat-label">❤️ HP</div>
           <div class="stat-val">${Math.floor(stats.hp)}</div>
-          <div class="stat-iv ${dino.hpIv >= 100 ? "iv-high" : ""}">IV: ${dino.hpIv}</div>
+          <div class="stat-iv ${dino.hpIv >= 100 ? "iv-high" : ""}">
+            IV: ${dino.hpIv}${ev.hp > 0 ? `<span class="ev-plus-tag">+${ev.hp}</span>` : ""}
+          </div>
         </div>
         <div class="stat-box">
           <div class="stat-label">💨 素早さ</div>
           <div class="stat-val">${Math.floor(stats.spd)}</div>
-          <div class="stat-iv ${dino.spdIv >= 100 ? "iv-high" : ""}">IV: ${dino.spdIv}</div>
+          <div class="stat-iv ${dino.spdIv >= 100 ? "iv-high" : ""}">
+            IV: ${dino.spdIv}${ev.spd > 0 ? `<span class="ev-plus-tag">+${ev.spd}</span>` : ""}
+          </div>
         </div>
       </div>
+
+      <div class="card-sub-stats-row">
+        <span>💖 親密度: <strong>${affection}</strong>/100</span>
+        <span>📊 努力値: <strong>${evUsed}</strong>/${evEarned}</span>
+      </div>
+
       <div class="card-iv-total">個体値合計: <strong>${totalIv}</strong></div>
 
       <!-- 横並び3連エサボタン -->
@@ -1943,7 +2011,7 @@ function renderMutantBadge(dino) {
 export function renderGame(game, state, handlers) {
   renderStarterEgg(game, handlers);
   renderStatusAndLogs(game, state.selectedMale, state.selectedFemale);
-  renderActiveDino(game);
+  renderActiveDino(game, handlers);
   renderExploreBox(game, state, handlers);
   renderDinoList(game, state, handlers);
   renderBreedingEggs(game, handlers);

@@ -497,6 +497,10 @@ async function handleExplore(isAuto = false) {
     winStreak++;
     game.stats.exploreWins++;
 
+    // 💖 親密度（+2 / 上限100） ＆ 📊 努力値ポイント（+2 / 上限100）の獲得
+    activeDino.affection = Math.min(100, (activeDino.affection ?? 0) + 2);
+    activeDino.evEarned = Math.min(100, (activeDino.evEarned ?? 0) + 2);
+
     // 連戦ボーナス倍率 ＋ 特性「早熟」ボーナスを反映して経験値計算
     const streakMult = i === 1 ? 1.0 : i === 2 ? 1.2 : 1.5;
     const baseGainedExp = (area.expBonus + activeDino.level) * streakMult;
@@ -739,6 +743,8 @@ function handleFeed(dinoId, foodType) {
   const finalExp = Math.floor(config.exp * expMult);
 
   game.foods[foodType]--;
+  dino.affection = Math.min(100, (dino.affection ?? 0) + 1);
+
   addExp(dino, finalExp);
 
   update();
@@ -1677,6 +1683,50 @@ function handleUseSizePotion(targetDinoId = game.activeDinoId) {
   update();
 }
 
+// 📊 努力値の増減処理（statKey: "atk" | "hp" | "spd", delta: -10 | -1 | +1 | +10）
+function handleAdjustEv(statKey, delta) {
+  const activeDino = game.dinos.find(d => d.uid === game.activeDinoId);
+  if (!activeDino) return;
+
+  activeDino.evEarned = Math.min(100, activeDino.evEarned ?? 0);
+  activeDino.ev ??= { atk: 0, hp: 0, spd: 0 };
+
+  const used = (activeDino.ev.atk ?? 0) + (activeDino.ev.hp ?? 0) + (activeDino.ev.spd ?? 0);
+  const remaining = Math.max(0, activeDino.evEarned - used);
+  const currentVal = activeDino.ev[statKey] ?? 0;
+
+  if (delta > 0) {
+    const add = Math.min(delta, remaining);
+    if (add <= 0) return;
+    activeDino.ev[statKey] = currentVal + add;
+  } else if (delta < 0) {
+    const sub = Math.min(-delta, currentVal);
+    if (sub <= 0) return;
+    activeDino.ev[statKey] = currentVal - sub;
+  }
+
+  // 最大HP変動に合わせて現在HPを上限内に収める
+  const newStats = calculateStats(activeDino);
+  activeDino.currentHp = Math.min(newStats.hp, activeDino.currentHp);
+
+  update();
+}
+
+// 📊 努力値振り分けのリセット（獲得済みポイントはすべて手元に戻る）
+function handleResetEv() {
+  const activeDino = game.dinos.find(d => d.uid === game.activeDinoId);
+  if (!activeDino || !activeDino.ev) return;
+
+  const used = (activeDino.ev.atk ?? 0) + (activeDino.ev.hp ?? 0) + (activeDino.ev.spd ?? 0);
+  if (used === 0) return;
+
+  activeDino.ev = { atk: 0, hp: 0, spd: 0 };
+  const newStats = calculateStats(activeDino);
+  activeDino.currentHp = Math.min(newStats.hp, activeDino.currentHp);
+
+  update();
+}
+
 // 現在の周回数に応じた敵ステータス倍率（1周目:1倍, 2周目:2.2倍, 3周目:4.84倍...）
 function getLoopStatMultiplier() {
   const loop = game.worldLoop ?? 1;
@@ -1992,6 +2042,8 @@ const handlers = {
   onSelectAllFilteredRainbows: handleSelectAllFilteredRainbows,
   onClearRainbowPicks: handleClearRainbowPicks,
   onCraftItem: handleCraftItem,
+  onAdjustEv: handleAdjustEv,
+  onResetEv: handleResetEv,
   onRollGacha: (times, isPremium = false) => handleRollGacha(times, isPremium),
   onUseTraitFruit: (dinoId) => handleUseTraitFruit(typeof dinoId === "string" ? dinoId : game.activeDinoId),
   onUseIvElixir: (dinoId) => handleUseIvElixir(typeof dinoId === "string" ? dinoId : game.activeDinoId),
@@ -2673,6 +2725,14 @@ const TIPS_DATA = {
       {
         title: "3. 恐竜のサイズ（体格）補正",
         desc: "体格は「小型 ＜ 中型 ＜ 大型 ＜ 巨大」の4段階です。\n・大きい側：相手より1段階大きいごとに与ダメージ +15%（最大 +45%）\n・小さい側：与ダメージは1段階ごとに -15% になりますが、身軽なため相手より1段階小さいごとに回避率が +5%（最大 +15%）上昇します！"
+      },
+      {
+        title: "4. 💖 親密度ボーナス（最大 +20%）",
+        desc: "探索の戦闘勝利（+2）やエサやり（+1）で親密度が上昇します（上限 100）。親密度が上がるほど相棒の与ダメージが増加し、MAX 100 で与ダメージが +20%（1.2倍）になります。"
+      },
+      {
+        title: "5. 📊 努力値（自由振り分け IVボーナス）",
+        desc: "探索の戦闘勝利ごとに努力値ポイントが +2 ずつ貯まります（上限 100）。獲得したポイントは相棒カードの「-10 / -1 / +1 / +10」ボタンで攻撃・HP・素早さのIVにいつでも自由に振り分け・リセットができます。"
       }
     ]
   },

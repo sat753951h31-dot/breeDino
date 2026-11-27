@@ -161,9 +161,14 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
   const eRank = SIZE_RANK[enemySize] ?? 2;
   const playerSizeDodge = Math.max(0, (eRank - pRank) * 0.05);
   const enemySizeDodge = Math.max(0, (pRank - eRank) * 0.05);
+  const affection = Math.min(100, player.affection ?? 0);
+  const affectionMult = 1 + affection * 0.002;
 
   // 体格補正 × タイプ相性 × 海エリア地形補正 × 特性「鉄壁」を反映
-  let playerAtk = Math.max(1, Math.floor(playerStats.atk * playerSizeMult * pMatchup * pTerrain));
+  let playerAtk = Math.max(
+    1,
+    Math.floor(playerStats.atk * playerSizeMult * pMatchup * pTerrain * affectionMult)
+  );
   const enemyAtk = Math.max(1, Math.floor(enemy.baseAtk * enemySizeMult * eMatchup * eTerrain * damageTakenMult));
 
   // 素早さにも海エリア地形補正を反映
@@ -177,7 +182,9 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
   const playerFirst = playerSpd >= enemySpd;
 
   addLog(`⚔️ ${enemy.name} (Lv${enemy.huntLevel}) と遭遇`);
-
+  if (affection > 0) {
+    addLog(`💖 親密度ボーナス（${affection}/100）：与ダメージ +${Math.round(affection * 0.2)}%！`);
+  }
   if (damageTakenMult < 1) {
     addLog(`🛡️ 特性【鉄壁】により受けるダメージを ${Math.round((1 - damageTakenMult) * 100)}% 軽減！`);
   }

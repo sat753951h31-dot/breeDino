@@ -37,12 +37,16 @@ function getSizeMultipliers(size) {
 }
 
 export function calculateStats(dino) {
+  const ev = dino.ev ?? { atk: 0, hp: 0, spd: 0 };
+  const totalAtkIv = (dino.atkIv ?? 0) + (ev.atk ?? 0);
+  const totalHpIv  = (dino.hpIv ?? 0)  + (ev.hp ?? 0);
+  const totalSpdIv = (dino.spdIv ?? 0) + (ev.spd ?? 0);
   const rarityBonus = getRarityMultiplier(dino.rarityType);
   const generationBonus = getGenerationMultiplier(dino.generation ?? 0);
   const mutantBonus = dino.mutant ? 1.15 : 1;
   const sizeBonus = getSizeMultipliers(dino.size);
   const tBonus = getTreasureBonuses();
-  const fBonus = getFacilityBonuses(activeFacility); // 👈 設備ボーナスを取得
+  const fBonus = getFacilityBonuses(activeFacility);
   const traitEffect = getTraitData(dino.trait).effect;
 
   const commonMult = rarityBonus * generationBonus * mutantBonus;
@@ -51,21 +55,22 @@ export function calculateStats(dino) {
     atk: (
       dino.baseAtk +
       dino.level * 2 +
-      dino.atkIv * 0.3
+      totalAtkIv * 0.3
     ) * commonMult * sizeBonus.atk * (1 + tBonus.atkMult + fBonus.statMult + (traitEffect.atkMult ?? 0)),
 
     hp: (
       dino.baseHp +
       dino.level * 5 +
-      dino.hpIv * 0.5
+      totalHpIv * 0.5
     ) * commonMult * sizeBonus.hp * (1 + tBonus.hpMult + fBonus.statMult + (traitEffect.hpMult ?? 0)),
 
     spd: (
       dino.baseSpd +
       dino.level +
-      dino.spdIv * 0.3
+      totalSpdIv * 0.3
     ) * commonMult * sizeBonus.spd * (1 + tBonus.spdMult + fBonus.statMult + (traitEffect.spdMult ?? 0))
   };
+
 }
 
 // 所持している秘宝リストをステータス計算機に同期する
