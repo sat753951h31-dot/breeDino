@@ -4454,3 +4454,30 @@ button{
     font-size: 0.85em;
   }
 }
+
+/* =========================================
+   スマホ用：交配ヘッダーの4ボタンを2列×2段に整列
+========================================= */
+@media (max-width: 768px) {
+  .breeding-stage .breeding-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .breeding-stage .header-help-btns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+  }
+
+  .breeding-stage .header-help-btns .btn-help-pill {
+    width: 100%;
+    padding: 6px 8px;
+    margin: 0;
+    font-size: 0.8em;
+    text-align: center;
+    box-sizing: border-box;
+  }
+}
