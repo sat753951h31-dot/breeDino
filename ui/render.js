@@ -356,7 +356,7 @@ function renderActiveDino(game, handlers) {
       </div>
 
       <div class="ev-header-row">
-        <span>📊 努力値（残り: <strong>${evRemain}</strong> / 獲得: ${evEarned} <small>※最大100</small>）</span>
+        <span>📊 努力値（残: <strong>${evRemain}</strong> / 獲得: <strong>${evEarned}</strong>/100）</span>
         <button id="resetEvBtn" type="button" class="btn-ev-reset" ${evUsed === 0 ? "disabled" : ""}>↺ リセット</button>
       </div>
 

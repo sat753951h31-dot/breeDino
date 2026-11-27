@@ -4223,3 +4223,25 @@ button{
   color: #495057;
   white-space: nowrap;
 }
+
+/* 努力値ヘッダー行を1行にスッキリ収める */
+.ev-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  margin: 8px 0 6px 0;
+  font-size: 0.8em;
+  color: #333;
+}
+
+.ev-header-row > span {
+  white-space: nowrap;
+}
+
+.ev-header-row .btn-ev-reset {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 2px 7px;
+  font-size: 0.9em;
+}
