@@ -267,6 +267,7 @@ function renderActiveDino(game, handlers) {
 
   const activeDino = game.dinos.find(d => d.uid === game.activeDinoId);
   if (!activeDino) {
+    el.dataset.renderedUid = "";
     el.innerHTML = `<p class="empty-msg">育成中の恐竜がいません。「恐竜一覧」からメインに設定してください。</p>`;
     return;
   }
@@ -282,9 +283,8 @@ function renderActiveDino(game, handlers) {
   const trait = getTraitData(activeDino.trait);
   const dinoType = getDinoType(activeDino.speciesId, activeDino.name);
 
-  // 👇 el.innerHTML より前に親密度と努力値を計算する
   const affection = Math.min(100, activeDino.affection ?? 0);
-  const affectionBonus = Math.round(affection * 0.2);
+  const affectionBonus = Math.floor(affection * 0.2);
   const evEarned = Math.min(100, activeDino.evEarned ?? 0);
   const ev = activeDino.ev ?? { atk: 0, hp: 0, spd: 0 };
   const evUsed = (ev.atk ?? 0) + (ev.hp ?? 0) + (ev.spd ?? 0);
@@ -295,6 +295,68 @@ function renderActiveDino(game, handlers) {
     { key: "hp",  label: "❤️ HP IV",  val: ev.hp ?? 0 },
     { key: "spd", label: "💨 素早IV", val: ev.spd ?? 0 }
   ];
+
+  // 同じ恐竜が表示済みならHTML（ボタン）を壊さず数値と有効/無効だけ更新する（連打ズーム防止）
+  if (el.dataset.renderedUid === activeDino.uid && el.querySelector(".bond-ev-panel")) {
+    const lvEl = el.querySelector(".js-active-lv");
+    if (lvEl) lvEl.textContent = activeDino.level;
+
+    const hpEl = document.getElementById("activeDinoHp");
+    if (hpEl) hpEl.textContent = Math.floor(activeDino.currentHp);
+
+    const maxHpEl = el.querySelector(".js-active-max-hp");
+    if (maxHpEl) maxHpEl.textContent = Math.floor(stats.hp);
+
+    const hpBar = el.querySelector(".js-active-hp-bar");
+    if (hpBar) {
+      hpBar.style.width = `${hpPercent}%`;
+      hpBar.className = `bar-fill js-active-hp-bar ${isCritical ? "hp-danger" : "hp-fill"}`;
+    }
+
+    const expTextEl = el.querySelector(".js-active-exp-text");
+    if (expTextEl) expTextEl.innerHTML = isMaxLv ? "<strong>MAX</strong>" : `${activeDino.exp} / ${nextExp}`;
+
+    const expBar = el.querySelector(".js-active-exp-bar");
+    if (expBar) expBar.style.width = `${expPercent}%`;
+
+    const atkEl = el.querySelector(".js-active-atk");
+    if (atkEl) atkEl.textContent = Math.floor(stats.atk);
+
+    const spdEl = el.querySelector(".js-active-spd");
+    if (spdEl) spdEl.textContent = Math.floor(stats.spd);
+
+    const affBonusEl = el.querySelector(".js-aff-bonus");
+    if (affBonusEl) affBonusEl.textContent = `+${affectionBonus}%`;
+
+    const affValEl = el.querySelector(".js-aff-val");
+    if (affValEl) affValEl.textContent = affection;
+
+    const affBar = el.querySelector(".js-aff-bar");
+    if (affBar) affBar.style.width = `${affection}%`;
+
+    const remainEl = el.querySelector(".js-ev-remain");
+    if (remainEl) remainEl.textContent = evRemain;
+
+    const earnedEl = el.querySelector(".js-ev-earned");
+    if (earnedEl) earnedEl.textContent = evEarned;
+
+    const resetBtn = document.getElementById("resetEvBtn");
+    if (resetBtn) resetBtn.disabled = evUsed === 0;
+
+    evRows.forEach(row => {
+      const valEl = el.querySelector(`.js-ev-val[data-stat="${row.key}"]`);
+      if (valEl) valEl.textContent = `+${row.val}`;
+
+      el.querySelectorAll(`.btn-ev-step[data-stat="${row.key}"]`).forEach(btn => {
+        const delta = Number(btn.dataset.delta);
+        btn.disabled = delta > 0 ? evRemain <= 0 : row.val <= 0;
+      });
+    });
+
+    return;
+  }
+
+  el.dataset.renderedUid = activeDino.uid;
 
   el.innerHTML = `
     <div class="partner-header">
@@ -307,7 +369,7 @@ function renderActiveDino(game, handlers) {
         ${renderMutantBadge(activeDino)}
         <h3>${activeDino.name} <small>${getSexLabel(activeDino.sex)}</small></h3>
       </div>
-      <div class="partner-level">Lv.<span>${activeDino.level}</span><small>/${maxLv}</small></div>
+      <div class="partner-level">Lv.<span class="js-active-lv">${activeDino.level}</span><small>/${maxLv}</small></div>
     </div>
 
     ${renderDinoAvatar(activeDino.speciesId, {
@@ -320,25 +382,25 @@ function renderActiveDino(game, handlers) {
     <div class="gauge-group">
       <div class="gauge-label">
         <span>HP ${isCritical ? `<strong class="status-critical">⚠️瀕死</strong>` : ""}</span>
-        <span><span id="activeDinoHp">${Math.floor(activeDino.currentHp)}</span> / ${Math.floor(stats.hp)}</span>
+        <span><span id="activeDinoHp">${Math.floor(activeDino.currentHp)}</span> / <span class="js-active-max-hp">${Math.floor(stats.hp)}</span></span>
       </div>
       <div class="bar-bg">
-        <div class="bar-fill ${isCritical ? "hp-danger" : "hp-fill"}" style="width: ${hpPercent}%"></div>
+        <div class="bar-fill js-active-hp-bar ${isCritical ? "hp-danger" : "hp-fill"}" style="width: ${hpPercent}%"></div>
       </div>
 
       <div class="gauge-label">
         <span>EXP</span>
-        <span>${isMaxLv ? "<strong>MAX</strong>" : `${activeDino.exp} / ${nextExp}`}</span>
+        <span class="js-active-exp-text">${isMaxLv ? "<strong>MAX</strong>" : `${activeDino.exp} / ${nextExp}`}</span>
       </div>
       <div class="bar-bg">
-        <div class="bar-fill exp-fill" style="width: ${expPercent}%"></div>
+        <div class="bar-fill js-active-exp-bar exp-fill" style="width: ${expPercent}%"></div>
       </div>
     </div>
 
     <!-- ステータス4マス表示 -->
     <div class="stats-mini-grid">
-      <div class="stat-item"><span>⚔️ 攻撃</span><strong>${Math.floor(stats.atk)}</strong></div>
-      <div class="stat-item"><span>💨 素早さ</span><strong>${Math.floor(stats.spd)}</strong></div>
+      <div class="stat-item"><span>⚔️ 攻撃</span><strong class="js-active-atk">${Math.floor(stats.atk)}</strong></div>
+      <div class="stat-item"><span>💨 素早さ</span><strong class="js-active-spd">${Math.floor(stats.spd)}</strong></div>
       <div class="stat-item"><span>📏 体格</span><strong>${getSizeLabel(activeDino.size)}</strong></div>
       <div class="stat-item"><span>🎨 体色</span><strong>${getColorLabel(activeDino.color)}</strong></div>
     </div>
@@ -350,22 +412,22 @@ function renderActiveDino(game, handlers) {
     <!-- 💖 親密度 ＆ 📊 努力値カスタマイズパネル -->
     <div class="bond-ev-panel">
       <div class="gauge-label">
-        <span>💖 親密度（与ダメ <strong>+${affectionBonus}%</strong>）</span>
-        <span><strong>${affection}</strong> / 100</span>
+        <span>💖 親密度（与ダメ <strong class="js-aff-bonus">+${affectionBonus}%</strong>）</span>
+        <span><strong class="js-aff-val">${affection}</strong> / 100</span>
       </div>
       <div class="bar-bg mini-bar">
-        <div class="bar-fill affection-fill" style="width: ${affection}%"></div>
+        <div class="bar-fill js-aff-bar affection-fill" style="width: ${affection}%"></div>
       </div>
 
       <div class="ev-header-row">
-        <span>📊 努力値（残: <strong>${evRemain}</strong> / 獲得: <strong>${evEarned}</strong>/100）</span>
+        <span>📊 努力値（残: <strong class="js-ev-remain">${evRemain}</strong> / 獲得: <strong class="js-ev-earned">${evEarned}</strong>/100）</span>
         <button id="resetEvBtn" type="button" class="btn-ev-reset" ${evUsed === 0 ? "disabled" : ""}>↺ リセット</button>
       </div>
 
       <div class="ev-rows">
         ${evRows.map(row => `
           <div class="ev-row">
-            <span class="ev-stat-name">${row.label}: <strong>+${row.val}</strong></span>
+            <span class="ev-stat-name">${row.label}: <strong class="js-ev-val" data-stat="${row.key}">+${row.val}</strong></span>
             <div class="ev-step-btns">
               <button type="button" class="btn-ev-step" data-stat="${row.key}" data-delta="-10" ${row.val <= 0 ? "disabled" : ""}>-10</button>
               <button type="button" class="btn-ev-step" data-stat="${row.key}" data-delta="-1" ${row.val <= 0 ? "disabled" : ""}>-1</button>

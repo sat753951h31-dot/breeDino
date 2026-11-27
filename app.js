@@ -1606,6 +1606,8 @@ function handleUseTraitFruit(targetDinoId = game.activeDinoId) {
 
   addLog(`🎲 【特性変化】${targetDino.name} の特性が「${oldTrait.name}」から「${nextTrait.icon} ${nextTrait.name}」に変化した！`);
   alert(`🎲 特性が変化しました！\n\n新しい特性：${nextTrait.icon} ${nextTrait.name}\n効果：${nextTrait.desc}`);
+  const activeEl = document.getElementById("activeDino");
+  if (activeEl) activeEl.dataset.renderedUid = "";
   update();
 }
 
@@ -1651,6 +1653,8 @@ function handleUseIvElixir(targetDinoId = game.activeDinoId) {
 
   addLog(`💉 【個体値強化】${targetDino.name} のIVが上昇！（ATK:${targetDino.atkIv} / HP:${targetDino.hpIv} / SPD:${targetDino.spdIv}）`);
   alert(`💉 個体値が強化されました！\n\nATK IV: ${targetDino.atkIv} / HP IV: ${targetDino.hpIv} / SPD IV: ${targetDino.spdIv}`);
+  const activeEl = document.getElementById("activeDino");
+  if (activeEl) activeEl.dataset.renderedUid = "";
   update();
 }
 
@@ -1686,6 +1690,8 @@ function handleUseSizePotion(targetDinoId = game.activeDinoId) {
 
   addLog(`📏 【体格変化】${targetDino.name} の体格が「${currentLabel}」から「${nextLabel}」に変化した！`);
   alert(`📏 体格が変化しました！\n\n新しい体格：${nextLabel}`);
+  const activeEl = document.getElementById("activeDino");
+  if (activeEl) activeEl.dataset.renderedUid = "";
   update();
 }
 
@@ -2327,6 +2333,11 @@ function update() {
 
 document.getElementById("breedBtn")?.addEventListener("click", () => executeBreed(1));
 document.getElementById("breed10Btn")?.addEventListener("click", () => executeBreed(10));
+
+// 📱 ダブルクリック・ダブルタップによるブラウザ標準ズームを抑止
+document.addEventListener("dblclick", (e) => {
+  e.preventDefault();
+}, { passive: false });
 
 // タブ切り替え処理
 document.querySelectorAll(".tab-btn").forEach(btn => {
