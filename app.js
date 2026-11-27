@@ -2334,9 +2334,20 @@ function update() {
 document.getElementById("breedBtn")?.addEventListener("click", () => executeBreed(1));
 document.getElementById("breed10Btn")?.addEventListener("click", () => executeBreed(10));
 
-// 📱 ダブルクリック・ダブルタップによるブラウザ標準ズームを抑止
-document.addEventListener("dblclick", (e) => {
-  e.preventDefault();
+// 📱 iPhone / Android 両対応：ボタン連打時のダブルタップズームを完全阻止しつつ連打を通す
+let lastBtnTapTime = 0;
+document.addEventListener("touchend", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+
+  const now = Date.now();
+  if (now - lastBtnTapTime < 350) {
+    e.preventDefault(); // ブラウザ標準のダブルタップズームを完全に無効化
+    if (!btn.disabled) {
+      btn.click(); // ズームと一緒に消えたタップの代わりにボタン処理を即実行
+    }
+  }
+  lastBtnTapTime = now;
 }, { passive: false });
 
 // タブ切り替え処理
