@@ -59,9 +59,11 @@ function renderGenBadge(dino) {
   const curAtk = calculateStats(dino).atk;
   const genMult = baseAtk > 0 ? (curAtk / baseAtk) : 1;
   const multPercent = Math.round((genMult - 1) * 100);
+  const genDefPercent = Math.min(75, gen * 2);
 
   const desc =
     `・世代ステータス倍率：${genMult.toFixed(2)}倍（+${multPercent}%）\n` +
+    `・血統の加護（被ダメージ軽減）：-${genDefPercent}%（1世代ごとに2%軽減 / 最大75%）\n` +
     `・現在のレベル上限：Lv.${maxLv}\n` +
     `　（F${gen}基本 Lv.${genBaseMax} ＋ 継承ボーナス +${currentBonus}）\n` +
     `・F${gen}の最大上限目安：Lv.${genBaseMax + maxAllowedBonus}（ボーナス上限 +${maxAllowedBonus}）`;

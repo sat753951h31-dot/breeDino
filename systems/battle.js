@@ -164,12 +164,20 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
   const affection = Math.min(100, player.affection ?? 0);
   const affectionMult = 1 + affection * 0.002;
 
+  // 世代による被ダメージ軽減（1世代ごとに 2% 軽減 / 最大 75% 軽減）
+  const playerGen = player.generation ?? 0;
+  const genDefReduction = Math.min(0.75, playerGen * 0.02);
+  const genDefMult = 1 - genDefReduction;
+
   // 体格補正 × タイプ相性 × 海エリア地形補正 × 特性「鉄壁」を反映
   let playerAtk = Math.max(
     1,
     Math.floor(playerStats.atk * playerSizeMult * pMatchup * pTerrain * affectionMult)
   );
-  const enemyAtk = Math.max(1, Math.floor(enemy.baseAtk * enemySizeMult * eMatchup * eTerrain * damageTakenMult));
+  let enemyAtk = Math.max(
+    1,
+    Math.floor(enemyStats.atk * enemySizeMult * eMatchup * eTerrain * (1 - damageReduction) * genDefMult)
+  );
 
   // 素早さにも海エリア地形補正を反映
   const playerSpd = playerStats.spd * pTerrain;
@@ -182,6 +190,9 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
   const playerFirst = playerSpd >= enemySpd;
 
   addLog(`⚔️ ${enemy.name} (Lv${enemy.huntLevel}) と遭遇`);
+  if (genDefReduction > 0) {
+    addLog(`🧬 血統の加護（F${playerGen}）：被ダメージ -${Math.round(genDefReduction * 100)}%！`);
+  }
   if (affection > 0) {
     addLog(`💖 親密度ボーナス（${affection}/100）：与ダメージ +${Math.round(affection * 0.2)}%！`);
   }
