@@ -163,11 +163,7 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
   const enemySizeDodge = Math.max(0, (pRank - eRank) * 0.05);
   const affection = Math.min(100, player.affection ?? 0);
   const affectionMult = 1 + affection * 0.002;
-
-  // 世代による被ダメージ軽減（1世代ごとに 2% 軽減 / 最大 75% 軽減）
-  const playerGen = player.generation ?? 0;
-  const genDefReduction = Math.min(0.75, playerGen * 0.02);
-  const genDefMult = 1 - genDefReduction;
+  const damageReduction = playerTrait?.effect?.damageReduction ?? 0;
 
   // 体格補正 × タイプ相性 × 海エリア地形補正 × 特性「鉄壁」を反映
   let playerAtk = Math.max(
@@ -176,9 +172,14 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
   );
   let enemyAtk = Math.max(
     1,
-    Math.floor(enemyStats.atk * enemySizeMult * eMatchup * eTerrain * (1 - damageReduction) * genDefMult)
+    Math.floor(enemy.baseAtk * enemySizeMult * eMatchup * eTerrain * (1 - damageReduction))
   );
 
+  // 世代による被ダメージ軽減（1世代ごとに 2% 軽減 / 最大 75% 軽減）
+  const playerGen = player.generation ?? 0;
+  const genDefReduction = Math.min(0.75, playerGen * 0.02);
+  enemyAtk = Math.max(1, Math.floor(enemyAtk * (1 - genDefReduction)));
+  
   // 素早さにも海エリア地形補正を反映
   const playerSpd = playerStats.spd * pTerrain;
   const enemySpd = enemy.baseSpd * eTerrain;
