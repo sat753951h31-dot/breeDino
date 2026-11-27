@@ -4481,3 +4481,41 @@ button{
     box-sizing: border-box;
   }
 }
+
+/* =========================================
+   相棒カード：タイプ固有パッシブ表示ボックス
+========================================= */
+.active-type-passive-desc {
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  font-size: 0.8em;
+  color: #37474f;
+  line-height: 1.4;
+}
+
+.active-type-passive-desc.type-carnivore {
+  background-color: #fff5f5;
+  border-color: #ffcdd2;
+  color: #b71c1c;
+}
+
+.active-type-passive-desc.type-herbivore {
+  background-color: #f1f8e9;
+  border-color: #c5e1a5;
+  color: #1b5e20;
+}
+
+.active-type-passive-desc.type-pterosaur {
+  background-color: #f3e5f5;
+  border-color: #e1bee7;
+  color: #4a148c;
+}
+
+.active-type-passive-desc.type-marine {
+  background-color: #e1f5fe;
+  border-color: #b3e5fc;
+  color: #01579b;
+}

@@ -1,7 +1,7 @@
 import { DINO_SPECIES } from "../data/dinos.js";
 import { AREAS } from "../data/areas.js";
 import { getTraitData } from "../data/traits.js";
-import { getDinoType, getTypeMatchupMultiplier, getTerrainMultiplier } from "../data/types.js";
+import { getDinoType, getTypeMatchupMultiplier, getTerrainMultiplier, getTypePassive } from "../data/types.js";
 
 const SIZE_RANK = {
   small: 1,
@@ -144,7 +144,10 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
 
   // プレイヤーの特性効果を取得
   const playerTrait = getTraitData(player.trait);
-  const playerDodgeBonus = playerTrait.effect.dodgeBonus ?? 0;
+  let playerDodgeBonus = playerTrait.effect.dodgeBonus ?? 0;
+  const playerTypeObj = getDinoType(player.speciesId, player.name);
+  const typePassive = getTypePassive(playerTypeObj.id);
+  playerDodgeBonus += typePassive.dodgeBonus ?? 0;
   const damageTakenMult = playerTrait.effect.damageTakenMult ?? 1.0;
   const regenRate = playerTrait.effect.regenRate ?? 0;
   const reflectRate = playerTrait.effect.reflectRate ?? 0;
@@ -242,7 +245,7 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
     } else {
       // 1. 敵の攻撃
       const prevHp = playerHp;
-      playerHp = performAttack(enemy.name, enemyAtk, enemySpd, player.name, playerHp, playerSpd, addLog, playerDodgeBonus);
+      playerHp = performAttack(enemy.name, enemyAtk, enemySpd, player.name, playerHp, playerSpd, addLog, playerDodgeBonus, 0, false, playerSizeDodge);
       const takenDmg = prevHp - playerHp;
 
       // 特性「棘の甲羅」のダメージ反射
@@ -253,16 +256,17 @@ export function battle(player, playerStats, enemy, isCritical, addLog, isSeaArea
         if (enemyHp <= 0) break;
       }
 
-      // 特性「不屈」の発動チェック
+      // 特性「不屈」の発動チェック（最大HPの30%まで回復）
       if (playerHp <= 0 && playerTrait.effect.endure && !endureUsed) {
-        playerHp = 1;
+        const healHp = Math.max(1, Math.floor(playerStats.hp * 0.30));
+        playerHp = healHp;
         endureUsed = true;
-        addLog(`❤️‍🔥 ${player.name} は特性【不屈】で致死ダメージをHP1で耐えた！`);
+        addLog(`❤️‍🔥 ${player.name} は特性【不屈】で踏みとどまり、HPを ${healHp}（30%）まで回復した！`);
       }
       if (playerHp <= 0) break;
 
       // 2. プレイヤーの攻撃
-      enemyHp = performAttack(player.name, playerAtk, playerSpd, enemy.name, enemyHp, enemySpd, addLog, 0, enemy.baseHp, true);
+      enemyHp = performAttack(player.name, playerAtk, playerSpd, enemy.name, enemyHp, enemySpd, addLog, 0, enemy.baseHp, true, enemySizeDodge);
       if (enemyHp <= 0) break;
     }
 

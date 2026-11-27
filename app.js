@@ -18,6 +18,7 @@ import { AREA_EXPEDITIONS } from "./data/expeditions.js";
 import { playExploreSequence } from "./ui/battleStage.js";
 import { FACILITIES, MAX_FACILITY_LEVEL, getFacilityBonuses, CRAFT_RECIPES, getMonumentUpgradeCost } from "./data/facilities.js";
 import { DEX_SPECIES } from "./data/dexSpecies.js";
+import { getDinoType, getTypePassive } from "./data/types.js";
 
 let game = loadGame();
 syncTreasures(game.treasures);
@@ -495,19 +496,33 @@ async function handleExplore(isAuto = false) {
       break;
     }
 
-    winStreak++;
+      winStreak++;
     game.stats.exploreWins++;
 
     // 💖 親密度（+2 / 上限100） ＆ 📊 努力値ポイント（+2 / 上限100）の獲得
     activeDino.affection = Math.min(100, (activeDino.affection ?? 0) + 2);
     activeDino.evEarned = Math.min(100, (activeDino.evEarned ?? 0) + 2);
 
-    // 連戦ボーナス倍率 ＋ 特性「早熟」ボーナスを反映して経験値計算
+    // タイプ固有パッシブを取得
+    const activeTypeId = getDinoType(activeDino.speciesId, activeDino.name).id;
+    const typePassive = getTypePassive(activeTypeId);
+    const isSeaArea = Boolean(area.isSea);
+
+    // 🌿 草食パッシブ：戦闘勝利ごとに最大HPの10%を自動回復
+    if (typePassive.winHealRate > 0) {
+      const latestStats = calculateStats(activeDino);
+      const healHp = Math.max(1, Math.floor(latestStats.hp * typePassive.winHealRate));
+      activeDino.currentHp = Math.min(latestStats.hp, activeDino.currentHp + healHp);
+      addLog(`🌿 【草食パッシブ】戦闘後にHPが ${healHp}（10%）回復した！`);
+    }
+
+    // 連戦ボーナス ＋ 特性 ＋ 設備 ＋ 周回 ＋ 🌊海生パッシブ（海限定EXP+30%）を反映
     const streakMult = i === 1 ? 1.0 : i === 2 ? 1.2 : 1.5;
     const baseGainedExp = (area.expBonus + activeDino.level) * streakMult;
     const fBonus = getFacilityBonuses(game.facility);
+    const seaExpBonus = isSeaArea ? typePassive.seaExpMult : 1.0;
     const gainedExp = Math.floor(
-      baseGainedExp * (activeTraitEffect.allExpMult ?? 1) * (1 + fBonus.expMult) * getLoopExpMultiplier()
+      baseGainedExp * (activeTraitEffect.allExpMult ?? 1) * (1 + fBonus.expMult) * getLoopExpMultiplier() * seaExpBonus
     );
     addLog(`✅ ${enemy.name} を倒した！（EXP +${gainedExp}${i > 1 ? ` / 連戦ボーナス×${streakMult}` : ""}）`);
     addExp(activeDino, gainedExp);
@@ -551,8 +566,9 @@ async function handleExplore(isAuto = false) {
       }
     }
 
-    // 卵ドロップ判定（孵化設備の短縮倍率も適用）
-    if (Math.random() < (area.eggChance + dropBonus)) {
+    // 卵ドロップ判定（🦅 翼竜パッシブ +8% を加算）
+    const totalEggChance = area.eggChance + dropBonus + typePassive.eggTreasureDropBonus;
+    if (Math.random() < totalEggChance) {
       const egg = rollAreaEgg(area.eggMinRarity);
       game.wildEggs.push(createWildEgg(egg.size, egg.rarity, currentHatchMult()));
       addLog(`🥚 卵を持ち帰った！（${getEggRarityLabel(egg.rarity)} / ${getSizeLabel(egg.size)}）`);
@@ -573,16 +589,18 @@ async function handleExplore(isAuto = false) {
       addLog(`🍖 ${enemy.name} から生肉獲得`);
     }
 
-    // 生命の結晶ドロップ判定
-    if (Math.random() < ((area.crystalChance ?? 0.3) + dropBonus)) {
+    // 生命の結晶ドロップ判定（🌊 海生パッシブ：海エリア限定 +15% を加算）
+    const seaCrystalBonus = isSeaArea ? typePassive.seaCrystalBonus : 0;
+    if (Math.random() < ((area.crystalChance ?? 0.3) + dropBonus + seaCrystalBonus)) {
       game.items.breedCrystal = (game.items.breedCrystal ?? 0) + 1;
       game.stats.crystalsEarned = (game.stats.crystalsEarned ?? 0) + 1;
       addLog(`💎 ${enemy.name} から「生命の結晶」を獲得した！`);
     }
 
-    // エリア秘宝のドロップ判定
+    // エリア秘宝のドロップ判定（🦅 翼竜パッシブ +8% を加算）
     const areaTreasure = TREASURES.find(t => t.areaLevel === areaLevel);
-    if (areaTreasure && Math.random() < (areaTreasure.dropChance + dropBonus)) {
+    const totalTreasureChance = (areaTreasure?.dropChance ?? 0) + dropBonus + typePassive.eggTreasureDropBonus;
+    if (areaTreasure && Math.random() < totalTreasureChance) {
       game.treasures ??= {};
       const currentLv = game.treasures[areaTreasure.id] ?? 0;
 
@@ -605,6 +623,7 @@ async function handleExplore(isAuto = false) {
         addLog(`🏺 「${areaTreasure.name}」は既にLv.MAXのため、✨ 極上肉×1 に変換された！`);
       }
     }
+
   }
 
   const exploreBtn = document.getElementById("exploreBtn");
@@ -731,7 +750,11 @@ function handleFeed(dinoId, foodType) {
 
   // 割合回復量の計算（最低保証あり・極上肉は全快）
   const fBonus = getFacilityBonuses(game.facility);
-  const finalHealRate = Math.min(1.0, config.healRate + fBonus.healBonus);
+  const dinoTypeId = getDinoType(dino.speciesId, dino.name).id;
+  const foodHealTypeBonus = getTypePassive(dinoTypeId).foodHealBonus ?? 0;
+
+  const finalHealRate = Math.min(1.0, config.healRate + fBonus.healBonus + foodHealTypeBonus);
+
   const healAmount = finalHealRate >= 1.0
     ? stats.hp
     : Math.max(config.minHeal, Math.floor(stats.hp * finalHealRate));
@@ -2842,6 +2865,10 @@ const TIPS_DATA = {
       {
         title: "5. 📊 努力値（自由振り分け IVボーナス）",
         desc: "探索の戦闘勝利ごとに努力値ポイントが +2 ずつ貯まります（上限 100）。獲得したポイントは相棒カードの「-10 / -1 / +1 / +10」ボタンで攻撃・HP・素早さのIVにいつでも自由に振り分け・リセットができます。"
+      },
+      {
+        title: "6. 🏷️ 4タイプ固有の探索・バトルパッシブ",
+        desc: "・🍖 肉食：高い基礎攻撃力と豊富なドラゴン系進化ルートを持つ決戦アタッカー\n・🌿 草食：戦闘勝利ごとに最大HPの10%を自動回復 ＋ エサ回復量 +20%（オート周回向き）\n・🦅 翼竜：卵・秘宝のドロップ率 +8% ＋ バトル中の回避率 +8%（トレジャー向き）\n・🌊 海生：海エリアでは能力1.35倍に加え、獲得EXP +30% ＆ 結晶ドロップ率 +15%（陸では0.75倍）"
       }
     ]
   },

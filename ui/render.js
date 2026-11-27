@@ -21,7 +21,7 @@ import { FACILITIES, FACILITY_MATERIALS, MAX_FACILITY_LEVEL, CRAFT_RECIPES, getM
 import { renderDinoAvatar } from "./dinoVisual.js";
 import { AREA_EXPEDITIONS } from "../data/expeditions.js";
 import { updateIdleStage } from "./battleStage.js";
-import { getDinoType, getTypeMatchupMultiplier, getTerrainMultiplier } from "../data/types.js";
+import { getDinoType, getTypeMatchupMultiplier, getTerrainMultiplier, getTypePassive } from "../data/types.js";
 
 const RARITY_RANK = {
   white: 1,
@@ -289,6 +289,7 @@ function renderActiveDino(game, handlers) {
   const ev = activeDino.ev ?? { atk: 0, hp: 0, spd: 0 };
   const evUsed = (ev.atk ?? 0) + (ev.hp ?? 0) + (ev.spd ?? 0);
   const evRemain = Math.max(0, evEarned - evUsed);
+  const typePassive = getTypePassive(dinoType.id);
 
   const evRows = [
     { key: "atk", label: "⚔️ 攻撃IV", val: ev.atk ?? 0 },
@@ -409,6 +410,10 @@ function renderActiveDino(game, handlers) {
       <strong>${trait.icon} ${trait.name}：</strong>${trait.desc}
     </div>
 
+    <div class="active-type-passive-desc type-${dinoType.id}">
+      <strong>${typePassive.label}：</strong>${typePassive.desc}
+    </div>
+    
     <!-- 💖 親密度 ＆ 📊 努力値カスタマイズパネル -->
     <div class="bond-ev-panel">
       <div class="gauge-label">

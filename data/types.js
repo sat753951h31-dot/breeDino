@@ -45,3 +45,53 @@ export function getTerrainMultiplier(typeId, isSeaArea = false) {
     return typeId === "marine" ? 0.75 : 1.0;
   }
 }
+
+// 4タイプ固有の探索・バトルパッシブを取得
+export function getTypePassive(typeId) {
+  switch (typeId) {
+    case "herbivore":
+      return {
+        label: "🌿 草食パッシブ（超耐久・オート周回）",
+        desc: "戦闘勝利ごとに最大HPの10%を自動回復 ＋ エサのHP回復量 +20%",
+        winHealRate: 0.10,
+        foodHealBonus: 0.20,
+        eggTreasureDropBonus: 0,
+        dodgeBonus: 0,
+        seaCrystalBonus: 0,
+        seaExpMult: 1.0
+      };
+    case "pterosaur":
+      return {
+        label: "🦅 翼竜パッシブ（トレジャー・高速回避）",
+        desc: "卵・秘宝のドロップ率 +8% ＋ バトル中の回避率 +8%",
+        winHealRate: 0,
+        foodHealBonus: 0,
+        eggTreasureDropBonus: 0.08,
+        dodgeBonus: 0.08,
+        seaCrystalBonus: 0,
+        seaExpMult: 1.0
+      };
+    case "marine":
+      return {
+        label: "🌊 海生パッシブ（深海エリア特化）",
+        desc: "海エリアでは全能力1.35倍に加え、獲得EXP +30% ＆ 生命の結晶ドロップ率 +15%（陸エリアでは能力0.75倍）",
+        winHealRate: 0,
+        foodHealBonus: 0,
+        eggTreasureDropBonus: 0,
+        dodgeBonus: 0,
+        seaCrystalBonus: 0.15,
+        seaExpMult: 1.30
+      };
+    default: // carnivore（肉食）
+      return {
+        label: "🍖 肉食パッシブ（純粋火力・ボス突破）",
+        desc: "高い基礎攻撃力と豊富なドラゴン系進化ルートを持つ決戦用アタッカー",
+        winHealRate: 0,
+        foodHealBonus: 0,
+        eggTreasureDropBonus: 0,
+        dodgeBonus: 0,
+        seaCrystalBonus: 0,
+        seaExpMult: 1.0
+      };
+  }
+}
