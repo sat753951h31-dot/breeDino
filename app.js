@@ -3,6 +3,7 @@ import { calculateStats, syncTreasures, syncFacilities, getTreasureBonuses } fro
 import { addExp } from "./systems/level.js";
 import { rollStarterEgg, hatchStarterEgg } from "./systems/starterEgg.js";
 import { renderGame, renderTick } from "./ui/render.js";
+import { getSizeLabel } from "./ui/labels.js";
 import { DINO_SPECIES } from "./data/dinos.js";
 import { SPECIAL_BREEDS } from "./data/specialBreeding.js";
 import { ACHIEVEMENTS } from "./data/achievements.js";
@@ -323,6 +324,15 @@ const handlers = {
   onHatchAllBreedingEggs: breedActions.handleHatchAllBreedingEggs,
   onHatchAllWildEggs: breedActions.handleHatchAllWildEggs,
   onRerollStarter: () => {
+    if (game.starterEgg?.rarity === "rainbow") {
+      const sizeText = getSizeLabel(game.starterEgg.size);
+      const ok = confirm(
+        `⚠️ 【確認】最高レアの「🌈 虹の卵（${sizeText}）」が出現しています！\n` +
+        `本当に選び直して別の卵にしますか？`
+      );
+      if (!ok) return;
+    }
+
     game.starterEgg = rollStarterEgg();
     update();
   },
