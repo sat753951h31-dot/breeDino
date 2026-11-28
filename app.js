@@ -154,10 +154,18 @@ function rescueIfSoftlocked() {
   const noWildEggs = (game.wildEggs?.length ?? 0) === 0;
   const noBreedingEggs = (game.breedingEggs?.length ?? 0) === 0;
 
-  if (noDinos && noWildEggs && noBreedingEggs && game.starterSelected) {
-    game.starterEgg = rollStarterEgg();
-    game.starterSelected = false;
-    addLog(`🥚 手持ちの恐竜と卵がすべてなくなったため、新しい「スターター卵」が支給されました！`);
+  if (noDinos && noWildEggs && noBreedingEggs) {
+    if (game.starterSelected || !game.starterEgg) {
+      game.starterEgg = rollStarterEgg();
+      game.starterSelected = false;
+      addLog(`🥚 手持ちの恐竜と卵がすべてなくなったため、新しい「スターター卵」が支給されました！`);
+    }
+
+    // 別のタブを開いていた場合でもスターター卵が見えるよう探索・育成タブへ切り替える
+    const exploreTabBtn = document.querySelector('.tab-btn[data-tab="tab-explore"]');
+    if (exploreTabBtn && !exploreTabBtn.classList.contains("active")) {
+      exploreTabBtn.click();
+    }
   }
 }
 
@@ -655,9 +663,12 @@ async function handleExplore(isAuto = false) {
 
       rescueIfSoftlocked();
 
+      const totalEggs = (game.wildEggs?.length ?? 0) + (game.breedingEggs?.length ?? 0);
       const rescueMsg = !game.starterSelected
         ? `\n\n🥚 恐竜がいなくなったため、画面上部に新しい「スターター卵」が用意されました！`
-        : "";
+        : (game.dinos.length === 0 && totalEggs > 0)
+          ? `\n\n🥚 恐竜はいなくなりましたが、手持ちの卵（${totalEggs}個）を「交配」タブから孵化させて再出発できます！`
+          : "";
 
       alert(
         `🪦 ${activeDino.name} は瀕死の傷がもとで力尽きました…\n` +
@@ -1098,9 +1109,12 @@ const result = battle(activeDino, stats, bossEnemy, wasCriticalAtStart, addLog, 
 
       rescueIfSoftlocked();
 
+      const totalEggs = (game.wildEggs?.length ?? 0) + (game.breedingEggs?.length ?? 0);
       const rescueMsg = !game.starterSelected
         ? `\n\n🥚 恐竜がいなくなったため、画面上部に新しい「スターター卵」が用意されました！`
-        : "";
+        : (game.dinos.length === 0 && totalEggs > 0)
+          ? `\n\n🥚 恐竜はいなくなりましたが、手持ちの卵（${totalEggs}個）を「交配」タブから孵化させて再出発できます！`
+          : "";
 
       alert(
         `🪦 ${activeDino.name} はボスに敗れ力尽きました…\n` +
@@ -2379,6 +2393,10 @@ const handlers = {
     }
 
     alert(msgParts.join("\n"));
+    update();
+  },
+  onRerollStarter: () => {
+    game.starterEgg = rollStarterEgg();
     update();
   },
   onSelectStarter: () => {
