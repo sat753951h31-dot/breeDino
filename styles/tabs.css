@@ -1,0 +1,469 @@
+/* =========================================
+   遠征タブ（出撃部隊・編成パネル・待機恐竜）
+========================================= */
+.exp-locked-notice {
+  padding: 24px;
+  text-align: center;
+  background-color: #f8f9fa;
+  border: 2px dashed #ccc;
+  border-radius: 12px;
+  margin: 16px 0;
+}
+
+.exp-section-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.exp-bulk-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+.active-exp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.active-exp-card {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background-color: #f1f8e9;
+  border: 2px solid #81c784;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.active-exp-card.is-done { border-color: #ff9800; background-color: #fffdf5; }
+.exp-card-title { font-weight: bold; font-size: 1.02em; }
+.exp-card-members { font-size: 0.85em; color: #444; }
+
+.exp-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 6px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.exp-done-msg { font-weight: bold; color: #e65100; }
+
+.btn-exp-start,
+.btn-exp-claim {
+  margin: 0;
+  padding: 8px 14px;
+  font-size: 0.92em;
+  font-weight: bold;
+  color: #fff;
+  background-color: #2e7d32;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #1b5e20;
+  white-space: nowrap;
+}
+
+.btn-exp-start:disabled { background-color: #ccc; box-shadow: none; cursor: not-allowed; }
+.btn-exp-claim { background-color: #ff8f00; box-shadow: 0 2px 0 #e65100; }
+
+.btn-exp-redeploy {
+  margin: 0;
+  padding: 8px 14px;
+  font-size: 0.92em;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(90deg, #00897b 0%, #1565c0 100%);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #0d47a1;
+  white-space: nowrap;
+}
+
+.btn-exp-redeploy:hover { filter: brightness(1.08); }
+
+.exp-builder-box {
+  padding: 14px;
+  border-radius: 10px;
+  background-color: #eef6ff;
+  border: 2px solid #90caf9;
+  margin-bottom: 20px;
+}
+
+.exp-builder-top { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95em; }
+
+.exp-luck-info {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  background-color: #ffffff;
+  border: 1px solid #bbdefb;
+  font-size: 0.85em;
+  color: #333;
+}
+
+.exp-luck-badge { padding: 2px 8px; border-radius: 999px; background-color: #f1f3f4; color: #666; }
+.exp-luck-badge.is-active { background-color: #e8f5e9; color: #1b5e20; border: 1px solid #81c784; }
+
+.exp-setup-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
+
+.exp-setup-row select {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #a5d6a7;
+  background-color: #fff;
+  font-size: 0.95em;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.exp-action-btns { display: flex; gap: 8px; flex-shrink: 0; }
+
+.btn-exp-auto {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 0.9em;
+  font-weight: bold;
+  color: #1565c0;
+  background-color: #ffffff;
+  border: 2px solid #64b5f6;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-exp-auto:hover:not(:disabled) { background-color: #e3f2fd; }
+.btn-exp-auto:disabled { border-color: #ccc; color: #999; background-color: #f5f5f5; cursor: not-allowed; }
+
+.exp-reward-preview {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1px dashed #90caf9;
+  font-size: 0.85em;
+  color: #1565c0;
+  line-height: 1.4;
+}
+
+#expeditionDinoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.btn-exp-pick {
+  margin: auto 0 0 0;
+  padding: 8px;
+  font-weight: bold;
+  border-radius: 6px;
+  border: 1px solid #81c784;
+  background-color: #f1f8e9;
+  color: #2e7d32;
+  cursor: pointer;
+}
+
+.btn-exp-pick.is-picked { background-color: #2e7d32; color: #fff; }
+.btn-exp-pick:disabled { background-color: #e0e0e0; border-color: #ccc; color: #777; cursor: not-allowed; }
+.badge-trait.is-lucky-highlight { background-color: #e8f5e9; color: #1b5e20; border-color: #81c784; }
+
+/* =========================================
+   設備・モニュメント・古代工房・秘宝タブ
+========================================= */
+.material-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.mat-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+}
+
+.mat-icon { font-size: 1.8em; }
+.mat-name { font-weight: bold; font-size: 0.95em; }
+.mat-count { font-size: 0.85em; color: #495057; }
+
+#facilityList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.facility-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 12px;
+  background-color: #f4faf2;
+  border: 2px solid #aed581;
+}
+
+.facility-card.is-max { background-color: #fffdf5; border-color: #ffd54f; }
+.fac-card-header { display: flex; justify-content: space-between; align-items: center; }
+.fac-card-header h3 { margin: 0; }
+.fac-lv-badge { font-size: 0.85em; font-weight: bold; padding: 3px 8px; border-radius: 6px; background-color: #dcedc8; color: #33691e; }
+.fac-lv-badge.max { background-color: #ff8f00; color: #fff; }
+.fac-desc { margin: 0; font-size: 0.85em; color: #555; }
+.fac-effect-box { padding: 8px 10px; border-radius: 6px; background-color: #ffffff; border: 1px solid #dcedc8; font-size: 0.88em; }
+.fac-next-effect { margin-top: 4px; color: #2e7d32; }
+.fac-upgrade-footer { margin-top: auto; display: flex; flex-direction: column; gap: 8px; padding-top: 6px; }
+.facility-cost { font-size: 0.85em; color: #558b2f; font-weight: bold; }
+
+.btn-upgrade {
+  margin: 0;
+  padding: 8px 14px;
+  font-size: 0.9em;
+  font-weight: bold;
+  color: #fff;
+  background-color: #689f38;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #33691e;
+}
+
+.btn-upgrade:hover:not(:disabled) { background-color: #7cb342; }
+.btn-upgrade:disabled { background-color: #ccc; box-shadow: none; cursor: not-allowed; }
+
+.fac-max-label {
+  margin-top: auto;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.9em;
+  color: #e65100;
+  padding: 8px;
+  background-color: #fff8e1;
+  border-radius: 6px;
+}
+
+.endgame-section-box {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 12px;
+  background-color: #f8f9fa;
+  border: 2px solid #cfd8dc;
+}
+
+.endgame-section-box.is-monument { background: linear-gradient(180deg, #f3e5f5 0%, #ffffff 100%); border-color: #ce93d8; }
+.endgame-section-box.is-workshop { background: linear-gradient(180deg, #e3f2fd 0%, #ffffff 100%); border-color: #90caf9; }
+
+.monument-action-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; }
+
+.craft-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.craft-card { display: flex; flex-direction: column; gap: 6px; padding: 12px; background-color: #ffffff; border: 1px solid #bbdefb; border-radius: 8px; }
+.craft-header-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.craft-owned-badge { font-size: 0.78em; padding: 2px 8px; border-radius: 999px; background-color: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; white-space: nowrap; }
+.craft-desc { font-size: 0.82em; color: #555; flex: 1; }
+
+.btn-craft {
+  margin: 4px 0 0 0;
+  padding: 8px;
+  font-size: 0.9em;
+  font-weight: bold;
+  color: #fff;
+  background-color: #1976d2;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-craft:hover:not(:disabled) { background-color: #1565c0; }
+.btn-craft:disabled { background-color: #ccc; cursor: not-allowed; }
+
+/* =========================================
+   ガチャ卵タブ
+========================================= */
+.gacha-box {
+  padding: 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fff8e1 0%, #f3e5f5 100%);
+  border: 2px solid #ce93d8;
+  margin-bottom: 16px;
+}
+
+.gacha-box.is-premium { background: linear-gradient(135deg, #fffde7 0%, #ffe082 50%, #fff8e1 100%); border: 2px solid #ffb300; }
+.gacha-box.is-premium.is-locked { background: #f5f5f5; border-color: #cfd8dc; opacity: 0.85; }
+.gacha-premium-title { font-weight: bold; font-size: 1.02em; color: #e65100; }
+
+.gacha-status-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+.gacha-crystal-pill { padding: 5px 12px; border-radius: 999px; background-color: #ffffff; border: 1px solid #90caf9; color: #1565c0; font-size: 0.92em; }
+.gacha-spec-pill { font-size: 0.85em; color: #4a148c; }
+.gacha-rates-info { font-size: 0.8em; color: #555; margin-bottom: 12px; }
+.gacha-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.btn-gacha-single,
+.btn-gacha-multi,
+.btn-gacha-premium-single,
+.btn-gacha-premium-multi {
+  margin: 0;
+  padding: 12px 10px;
+  font-size: 1em;
+  font-weight: bold;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  line-height: 1.3;
+}
+
+.btn-gacha-single { background: linear-gradient(90deg, #26a69a 0%, #00897b 100%); box-shadow: 0 3px 0 #004d40; }
+.btn-gacha-multi  { background: linear-gradient(90deg, #ff7043 0%, #ab47bc 50%, #5c6bc0 100%); box-shadow: 0 3px 0 #4a148c; }
+.btn-gacha-premium-single { background: linear-gradient(90deg, #f57c00 0%, #ffb300 100%); box-shadow: 0 3px 0 #e65100; }
+.btn-gacha-premium-multi  { background: linear-gradient(90deg, #d84315 0%, #ad1457 50%, #6a1b9a 100%); box-shadow: 0 3px 0 #4a148c; }
+.btn-gacha-single:hover:not(:disabled),
+.btn-gacha-multi:hover:not(:disabled),
+.btn-gacha-premium-single:hover:not(:disabled),
+.btn-gacha-premium-multi:hover:not(:disabled) { filter: brightness(1.08); }
+
+.btn-gacha-single:disabled,
+.btn-gacha-multi:disabled,
+.btn-gacha-premium-single:disabled,
+.btn-gacha-premium-multi:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; }
+
+.gacha-result-title { margin: 0 0 10px 0; }
+.gacha-result-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.dino-card.is-gacha-jackpot { border: 2px solid #ffb300; box-shadow: 0 4px 12px rgba(255, 179, 0, 0.25); }
+
+/* =========================================
+   図鑑タブ
+========================================= */
+.dex-summary { background-color: #f4f8f4; border: 1px solid #c8e6c9; border-radius: 8px; padding: 12px; margin-bottom: 16px; }
+.dex-fill { background-color: #009688; }
+.dex-filter-bar { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px 14px; box-sizing: border-box; }
+.dex-filter-item { display: flex; align-items: center; gap: 6px; min-width: 0; }
+
+#dexList { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.dex-card { border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+.dex-card.is-found { background-color: #fff; border: 2px solid #80cbc4; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05); }
+.dex-card.is-found.is-special { border-color: #ba68c8; background: linear-gradient(180deg, #ffffff 0%, #fcf4ff 100%); }
+.dex-card.is-unknown { background-color: #f0f0f0; border: 2px dashed #ccc; color: #777; }
+.dex-card-top { display: flex; justify-content: space-between; align-items: center; font-size: 0.8em; }
+.dex-no { font-weight: bold; color: #888; }
+.badge-normal { background-color: #e0f2f1; color: #00695c; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+.badge-special { background-color: #f3e5f5; color: #7b1fa2; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+.dex-card h4 { margin: 4px 0; font-size: 1.1em; }
+.dex-size { font-size: 0.85em; color: #555; }
+.dex-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background-color: #f7f9fa; padding: 6px; border-radius: 6px; font-size: 0.85em; font-weight: bold; text-align: center; }
+.dex-hint { font-size: 0.8em; background-color: rgba(255, 255, 255, 0.7); padding: 6px 8px; border-radius: 6px; line-height: 1.4; }
+
+/* =========================================
+   実績・記録・秘宝タブ
+========================================= */
+#recordGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 24px; }
+.record-box { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 10px; padding: 12px; text-align: center; }
+.record-icon { font-size: 1.6em; }
+.record-label { font-size: 0.8em; color: #666; margin: 4px 0; }
+.record-val { font-size: 1.2em; font-weight: bold; color: #222; }
+
+.ach-summary-card {
+  background: linear-gradient(90deg, #fffdf5 0%, #fff8e1 100%);
+  border: 1px solid #ffe082;
+  border-left: 5px solid #ffb300;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 6px rgba(255, 179, 0, 0.08);
+}
+
+.ach-summary-card.is-complete { background: linear-gradient(90deg, #fff8e1 0%, #fce4ec 100%); border-color: #ff8f00; }
+.ach-summary-card .bar-bg { margin-bottom: 0; }
+.ach-fill { background: linear-gradient(90deg, #ffb300 0%, #ff6f00 100%); }
+
+.ach-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 0.9em;
+}
+
+.ach-filter-bar label { font-weight: bold; color: #495057; white-space: nowrap; }
+.ach-filter-bar select { height: 34px; padding: 0 10px; border: 1px solid #ced4da; border-radius: 6px; background-color: #ffffff; font-size: 0.95em; }
+
+#achievementList { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.ach-card { border: 2px solid #e0e0e0; border-radius: 10px; padding: 12px; background-color: #fafafa; }
+.ach-card.is-unlocked { border-color: #ffc107; background: linear-gradient(180deg, #fffdf5 0%, #fff8e1 100%); }
+.ach-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ach-title { font-weight: bold; font-size: 1.05em; }
+.ach-reward { font-size: 0.8em; background-color: #fff; border: 1px solid #ddd; padding: 2px 6px; border-radius: 4px; }
+.ach-desc { font-size: 0.85em; color: #555; margin: 6px 0 10px 0; }
+
+#treasureList { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; margin-bottom: 24px; }
+.treasure-card { border-radius: 10px; padding: 12px; text-align: center; border: 2px solid #e0e0e0; background-color: #f5f5f5; }
+.treasure-card.is-owned { border-color: #ffb300; background: linear-gradient(180deg, #fffdf5 0%, #fff3cd 100%); box-shadow: 0 3px 8px rgba(255, 179, 0, 0.18); }
+.treasure-card.is-missing { opacity: 0.7; border-style: dashed; }
+.treasure-card.is-max { border-color: #ff8f00; box-shadow: 0 0 12px rgba(255, 143, 0, 0.35); }
+.treasure-top { display: flex; justify-content: space-between; align-items: center; }
+.treasure-area { font-size: 0.75em; font-weight: bold; color: #666; }
+.treasure-lv { font-size: 0.75em; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #ffe082; color: #e65100; }
+.treasure-lv.max { background-color: #ff6f00; color: #fff; }
+.treasure-icon { font-size: 2em; margin: 6px 0; }
+.treasure-name { font-weight: bold; font-size: 1.05em; margin-bottom: 4px; }
+.treasure-desc { font-size: 0.8em; color: #444; line-height: 1.4; }
+
+/* =========================================
+   スマホ対応（遠征・図鑑・実績）
+========================================= */
+@media (max-width: 768px) {
+  .exp-section-header { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .exp-bulk-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .exp-bulk-actions button { width: 100%; padding: 9px 4px; font-size: 0.85em; }
+
+  .exp-builder-box { padding: 12px; }
+  .exp-builder-top { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .exp-builder-top > span {
+    display: inline-block;
+    padding: 2px 10px;
+    font-size: 0.84em;
+    background-color: #ffffff;
+    border: 1px solid #90caf9;
+    border-radius: 999px;
+    color: #1565c0;
+  }
+
+  .exp-luck-info { flex-direction: column; align-items: flex-start; gap: 6px; font-size: 0.82em; }
+  .exp-setup-row { flex-direction: column; align-items: stretch; gap: 8px; }
+  .exp-action-btns { display: grid; grid-template-columns: 1fr 1.3fr; width: 100%; }
+  .btn-exp-start { width: 100%; }
+
+  .btn-upgrade { width: 100%; }
+
+  .dex-filter-bar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .dex-filter-item { flex-direction: column; align-items: stretch; gap: 4px; }
+  .dex-filter-item select { width: 100%; max-width: 100%; box-sizing: border-box; }
+
+  .ach-filter-bar { justify-content: space-between; }
+  .ach-filter-bar select { flex: 1; max-width: 180px; }
+}
+

@@ -1,0 +1,670 @@
+/* =========================================
+   全体基本設定 ＆ スマホ連打ズーム完全防止
+========================================= */
+*,
+*::before,
+*::after {
+  touch-action: manipulation;
+}
+
+button,
+.btn-ev-step,
+.btn-ev-reset {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  padding: 20px;
+  font-family: sans-serif;
+}
+
+button {
+  padding: 10px 20px;
+  margin: 5px;
+}
+
+.empty-msg {
+  color: #777;
+  font-size: 0.9em;
+}
+
+.status-critical {
+  color: red;
+  font-weight: bold;
+}
+
+/* =========================================
+   ゲームタイトルロゴ（BreeDino）
+========================================= */
+.game-header {
+  text-align: center;
+  margin: 8px 0 18px 0;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f4faf4 0%, #fffaf0 100%);
+  border: 2px solid #c8e6c9;
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.08);
+}
+
+.game-title {
+  margin: 0;
+  font-family: "Arial Rounded MT Bold", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
+  font-size: 2.4em;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.title-bree {
+  color: #2e7d32;
+  text-shadow: 0 2px 0 #a5d6a7, 0 4px 0 #1b5e20, 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+.title-dino {
+  color: #f57c00;
+  text-shadow: 0 2px 0 #ffe082, 0 4px 0 #bf360c, 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+.title-icon {
+  font-size: 0.85em;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.18));
+}
+
+.title-icon.is-egg {
+  display: inline-block;
+  animation: title-egg-tilt 3s ease-in-out infinite;
+}
+
+.game-subtitle {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 12px;
+  font-size: 0.72em;
+  font-weight: bold;
+  letter-spacing: 0.14em;
+  color: #558b2f;
+  background-color: #ffffff;
+  border: 1px solid #c5e1a5;
+  border-radius: 999px;
+}
+
+@keyframes title-egg-tilt {
+  0%, 80%, 100% { transform: rotate(0deg); }
+  85% { transform: rotate(-12deg); }
+  92% { transform: rotate(12deg); }
+}
+
+/* =========================================
+   タブナビゲーション ＆ 通知バッジ
+========================================= */
+.tab-nav {
+  display: flex;
+  gap: 6px;
+  margin: 16px 0;
+  border-bottom: 2px solid #ccc;
+  padding-bottom: 6px;
+}
+
+@media (min-width: 769px) {
+  .tab-nav {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .tab-btn {
+    width: 100%;
+    white-space: nowrap;
+    padding: 10px 12px;
+    font-size: 0.95em;
+    text-align: center;
+  }
+}
+
+.tab-btn {
+  padding: 10px 16px;
+  font-size: 1em;
+  font-weight: bold;
+  border: 1px solid #ccc;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.tab-btn:hover {
+  background-color: #e2e8f0;
+}
+
+.tab-btn.active {
+  background-color: #ff9800;
+  color: #fff;
+  border-color: #ff9800;
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+.tab-badge {
+  display: none;
+  margin-left: 4px;
+  padding: 2px 7px;
+  font-size: 0.8em;
+  font-weight: bold;
+  line-height: 1;
+  color: #fff;
+  background-color: #e53935;
+  border-radius: 999px;
+  vertical-align: middle;
+  animation: badge-pop 1.5s infinite;
+}
+
+@keyframes badge-pop {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+/* =========================================
+   全タブ共通：セクション見出し ＆ ヘルプボタン
+========================================= */
+.tab-panel > .breeding-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 10px 14px;
+  margin: 4px 0 14px 0;
+  background: linear-gradient(90deg, #f1f8e9 0%, #fffdf7 100%);
+  border: 1px solid #c5e1a5;
+  border-left: 6px solid #2e7d32;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(46, 125, 50, 0.06);
+}
+
+.tab-panel > .breeding-header h2 {
+  margin: 0;
+  font-size: 1.22em;
+  font-weight: 800;
+  color: #1b5e20;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tab-panel > h2 {
+  position: relative;
+  margin: 22px 0 12px 0;
+  padding: 8px 14px;
+  font-size: 1.15em;
+  font-weight: 800;
+  color: #263238;
+  background: linear-gradient(90deg, #f5f7fa 0%, #ffffff 100%);
+  border: 1px solid #e0e6ed;
+  border-left: 5px solid #ff9800;
+  border-radius: 8px;
+}
+
+.tab-panel > h3,
+.wild-egg-header,
+.exp-section-header {
+  margin: 18px 0 10px 0;
+  padding: 6px 12px;
+  background-color: #f8fafc;
+  border-left: 4px solid #64b5f6;
+  border-bottom: 1px solid #e2e8f0;
+  border-radius: 0 6px 6px 0;
+}
+
+.tab-panel > h3,
+.wild-egg-header h3,
+.exp-section-header h2,
+.exp-section-header h3 {
+  margin: 0;
+  font-size: 1.05em;
+  font-weight: bold;
+  color: #1e293b;
+}
+
+.tab-panel > .tab-desc {
+  margin: -6px 0 14px 4px;
+  font-size: 0.86em;
+  color: #546e7a;
+  line-height: 1.5;
+}
+
+.header-help-btns {
+  display: flex;
+  gap: 5px;
+  flex-wrap: nowrap;
+}
+
+.btn-help-pill {
+  padding: 3px 8px;
+  font-size: 0.76em;
+  font-weight: bold;
+  color: #1565c0;
+  background-color: #e3f2fd;
+  border: 1px solid #90caf9;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-help-pill:hover {
+  filter: brightness(0.95);
+}
+
+.btn-help-pill.is-trait {
+  color: #2e7d32;
+  background-color: #e8f5e9;
+  border-color: #a5d6a7;
+}
+
+.btn-help-pill.is-recipe {
+  color: #6a1b9a;
+  background-color: #f3e5f5;
+  border-color: #ce93d8;
+}
+
+.btn-help-pill.is-tip {
+  color: #e65100;
+  background-color: #fff3e0;
+  border-color: #ffcc80;
+}
+
+.btn-help-pill.is-reverse {
+  color: #0277bd;
+  background-color: #e1f5fe;
+  border-color: #81d4fa;
+}
+
+/* =========================================
+   共通ゲージ ＆ 各種バッジ
+========================================= */
+.gauge-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85em;
+  margin-bottom: 3px;
+}
+
+.bar-bg {
+  width: 100%;
+  height: 10px;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.bar-fill {
+  height: 100%;
+  transition: width 0.25s ease;
+}
+
+.hp-fill { background-color: #4caf50; }
+.hp-danger { background-color: #f44336; }
+.exp-fill { background-color: #2196f3; }
+.area-fill { background-color: #ff9800; }
+
+.badge-gen,
+.badge-rarity,
+.badge-mutant {
+  display: inline-block;
+  font-size: 0.75em;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: #eee;
+  margin-right: 4px;
+}
+
+.badge-mutant {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.badge-gen[data-badge-desc],
+.badge-rarity[data-badge-desc],
+.badge-mutant[data-badge-desc] {
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.badge-bloodline {
+  display: inline-block;
+  font-size: 0.75em;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: #e0f2f1;
+  color: #00695c;
+  border: 1px solid #b2dfdb;
+  margin-right: 4px;
+}
+
+.badge-trait {
+  display: inline-block;
+  font-size: 0.75em;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: #e8eaf6;
+  color: #283593;
+  border: 1px solid #c5cae9;
+  margin-right: 4px;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.badge-type {
+  display: inline-block;
+  font-size: 0.75em;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-right: 4px;
+  cursor: help;
+}
+
+.badge-type.type-carnivore { background-color: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+.badge-type.type-herbivore { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+.badge-type.type-pterosaur { background-color: #f3e5f5; color: #6a1b9a; border: 1px solid #ce93d8; }
+.badge-type.type-marine    { background-color: #e1f5fe; color: #0277bd; border: 1px solid #81d4fa; }
+
+.sex-male { color: #1565c0; font-weight: bold; }
+.sex-female { color: #d81b60; font-weight: bold; }
+
+/* =========================================
+   恐竜SVGビジュアル（体格・体色・ミュータント演出）
+========================================= */
+.dino-avatar-box {
+  position: relative;
+  height: 84px;
+  margin: 6px 0 10px 0;
+  border-radius: 10px;
+  background: radial-gradient(circle at center, #f4f7f4 0%, #e4ece4 100%);
+  border: 1px solid #dce5dc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.dino-avatar-box.is-compact {
+  height: 64px;
+  margin: 4px 0;
+}
+
+.dino-svg {
+  width: 82px;
+  height: 58px;
+  transition: transform 0.25s ease;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.18));
+}
+
+.dino-avatar-box.is-compact .dino-svg {
+  width: 68px;
+  height: 48px;
+}
+
+.dino-avatar-box.size-small .dino-svg  { transform: scale(0.78); }
+.dino-avatar-box.size-normal .dino-svg { transform: scale(0.95); }
+.dino-avatar-box.size-large .dino-svg  { transform: scale(1.12); }
+.dino-avatar-box.size-giant .dino-svg  { transform: scale(1.28); }
+
+.dino-avatar-box.color-normal .dino-svg { fill: #4e6e58; }
+
+.dino-avatar-box.color-blue { background: radial-gradient(circle at center, #e3f2fd 0%, #bbdefb 100%); }
+.dino-avatar-box.color-blue .dino-svg { fill: #1565c0; }
+
+.dino-avatar-box.color-gold { background: radial-gradient(circle at center, #fffde7 0%, #ffecb3 100%); }
+.dino-avatar-box.color-gold .dino-svg { fill: #f9a825; }
+
+.dino-avatar-box.color-rainbow { background: linear-gradient(135deg, #fffde7 0%, #fce4ec 50%, #e3f2fd 100%); }
+.dino-avatar-box.color-rainbow .dino-svg {
+  fill: #e040fb;
+  animation: rainbow-hue 3s linear infinite;
+}
+
+@keyframes rainbow-hue {
+  0% { filter: hue-rotate(0deg) drop-shadow(0 3px 3px rgba(0, 0, 0, 0.2)); }
+  100% { filter: hue-rotate(360deg) drop-shadow(0 3px 3px rgba(0, 0, 0, 0.2)); }
+}
+
+@keyframes mutantAuraPulse {
+  0%, 100% { filter: drop-shadow(0 0 3px #e040fb) drop-shadow(0 0 7px #7c4dff); }
+  50% { filter: drop-shadow(0 0 6px #00e5ff) drop-shadow(0 0 12px #d500f9); }
+}
+
+.dino-avatar-box.is-mutant-aura {
+  box-shadow: inset 0 0 12px rgba(156, 39, 176, 0.35);
+}
+
+.dino-avatar-box.is-mutant-aura .dino-svg {
+  animation: mutantAuraPulse 2.2s infinite ease-in-out;
+}
+
+.dino-avatar-box .avatar-mutant-spark {
+  position: absolute;
+  bottom: 4px;
+  left: 6px;
+  font-size: 0.78em;
+  background: rgba(74, 20, 140, 0.82);
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: 999px;
+  box-shadow: 0 0 6px rgba(224, 64, 251, 0.7);
+}
+
+.dino-avatar-box.is-silhouette {
+  background: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.dino-avatar-box.is-silhouette .dino-svg {
+  fill: #adb5bd;
+  filter: none;
+}
+
+.dino-avatar-box.is-enemy-wild .dino-svg {
+  fill: #8e2430;
+}
+
+/* =========================================
+   共通モーダル（セーブ復元 ＆ 早見表・Tips・逆引き）
+========================================= */
+.backup-modal {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  z-index: 9999;
+}
+
+.backup-modal-content {
+  width: 100%;
+  max-width: 500px;
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.backup-modal-content h3 { margin: 0; }
+.backup-modal-desc { margin: 0; font-size: 0.85em; color: #555; }
+
+#backupTextArea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  font-family: monospace;
+  font-size: 0.85em;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  resize: vertical;
+  word-break: break-all;
+}
+
+.backup-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.guide-modal-content {
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.guide-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.guide-modal-header h3 { margin: 0; font-size: 1.05em; }
+.guide-modal-sub { margin: 0 0 8px 0; font-size: 0.85em; color: #555; }
+
+.guide-modal-body {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.guide-item {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  font-size: 0.88em;
+}
+
+.guide-item.is-discovered {
+  background-color: #fdf7ff;
+  border-color: #e1bee7;
+}
+
+.guide-item-title { font-size: 0.98em; margin-bottom: 2px; }
+.guide-item-desc { color: #555; line-height: 1.4; }
+.guide-recipe-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+.guide-no {
+  font-size: 0.8em;
+  font-weight: bold;
+  color: #7b1fa2;
+  background-color: #f3e5f5;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.guide-result { margin-top: 4px; color: #333; }
+
+/* =========================================
+   フッターバー
+========================================= */
+.footer-debug-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0 20px 0;
+}
+
+.footer-backup-group {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-footer-reset {
+  padding: 6px 12px;
+  font-size: 0.85em;
+  color: #c62828;
+  background-color: #fff;
+  border: 1px solid #ef9a9a;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-footer-reset:hover { background-color: #ffebee; }
+
+.btn-footer-backup {
+  padding: 6px 12px;
+  font-size: 0.85em;
+  font-weight: bold;
+  color: #37474f;
+  background-color: #eceff1;
+  border: 1px solid #b0bec5;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-footer-backup:hover { background-color: #cfd8dc; }
+
+/* =========================================
+   スマホ・タブレット共通レスポンシブ
+========================================= */
+@media (max-width: 768px) {
+  body {
+    padding: 8px;
+    margin: 0;
+  }
+
+  .game-title {
+    font-size: 1.8em;
+  }
+
+  .tab-nav {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .tab-btn {
+    padding: 10px 4px;
+    font-size: 0.85em;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .tab-panel > .breeding-header { padding: 9px 10px; }
+  .tab-panel > .breeding-header h2 { font-size: 1.08em; }
+  .tab-panel > h2 { font-size: 1.05em; padding: 7px 10px; }
+
+  input[type="text"],
+  select {
+    font-size: 16px !important;
+  }
+}
