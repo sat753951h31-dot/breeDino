@@ -4519,3 +4519,68 @@ button{
   border-color: #b3e5fc;
   color: #01579b;
 }
+
+/* =========================================
+   一覧カードの3連エサボタンを下段の貴重品ボタンと完全統一
+========================================= */
+.card-feed-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 4px;
+  margin-top: auto;
+}
+
+.card-feed-row button {
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  padding: 5px 2px;
+  font-size: 0.75em;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .card-feed-row button {
+    font-size: 0.72em;
+    padding: 5px 1px;
+  }
+}
+
+/* =========================================
+   一覧カード：上段（エサ）と下段（貴重品）の横幅・位置を完全一致
+========================================= */
+.card-feed-row,
+.card-special-feed-row {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 5px !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.card-feed-row button,
+.card-special-feed-row .btn-card-special {
+  min-width: 0 !important;
+  width: 100% !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  padding: 6px 2px !important;
+  font-size: 0.75em !important;
+  font-weight: bold;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .card-feed-row button,
+  .card-special-feed-row .btn-card-special {
+    font-size: 0.72em !important;
+    padding: 6px 1px !important;
+  }
+}

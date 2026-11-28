@@ -21,7 +21,7 @@ import { FACILITIES, FACILITY_MATERIALS, MAX_FACILITY_LEVEL, CRAFT_RECIPES, getM
 import { renderDinoAvatar } from "./dinoVisual.js";
 import { AREA_EXPEDITIONS } from "../data/expeditions.js";
 import { updateIdleStage } from "./battleStage.js";
-import { getDinoType, getTypeMatchupMultiplier, getTerrainMultiplier, getTypePassive } from "../data/types.js";
+import { getDinoType, getTypeMatchupMultiplier, getTerrainMultiplier, getTypePassive, getFoodLabelsForType } from "../data/types.js";
 
 const RARITY_RANK = {
   white: 1,
@@ -171,10 +171,14 @@ function renderStatusAndLogs(game, selectedMale, selectedFemale) {
   const foodStorage = document.getElementById("foodStorage");
   if (foodStorage) {
     const activeId = game.activeDinoId;
+    const activeDino = game.dinos.find(d => d.uid === activeId);
+    const activeTypeId = activeDino ? getDinoType(activeDino.speciesId, activeDino.name).id : "carnivore";
+    const fLabels = getFoodLabelsForType(activeTypeId);
+
     const foodItems = [
-      { type: "raw", icon: "🍖", name: "生肉", count: game.foods.raw, desc: "HP20%回復 / EXP+10" },
-      { type: "good", icon: "🥩", name: "上質肉", count: game.foods.good, desc: "HP50%回復 / EXP+30" },
-      { type: "premium", icon: "✨", name: "極上肉", count: game.foods.premium, desc: "HP全快 / EXP+100" }
+      { type: "raw", icon: fLabels.raw.icon, name: fLabels.raw.name, count: game.foods.raw, desc: "HP20%回復 / EXP+10" },
+      { type: "good", icon: fLabels.good.icon, name: fLabels.good.name, count: game.foods.good, desc: "HP50%回復 / EXP+30" },
+      { type: "premium", icon: fLabels.premium.icon, name: fLabels.premium.name, count: game.foods.premium, desc: "HP全快 / EXP+100" }
     ];
 
     const fruitCount = game.items?.traitFruit ?? 0;
@@ -413,7 +417,7 @@ function renderActiveDino(game, handlers) {
     <div class="active-type-passive-desc type-${dinoType.id}">
       <strong>${typePassive.label}：</strong>${typePassive.desc}
     </div>
-    
+
     <!-- 💖 親密度 ＆ 📊 努力値カスタマイズパネル -->
     <div class="bond-ev-panel">
       <div class="gauge-label">
@@ -763,6 +767,7 @@ function renderDinoList(game, state, handlers) {
     const bloodlineBonus = getBloodlineBonus(dino);
     const trait = getTraitData(dino.trait);
     const dinoType = getDinoType(dino.speciesId, dino.name);
+    const fLabels = getFoodLabelsForType(dinoType.id);
     const fruitCount = game.items?.traitFruit ?? 0;
     const elixirCount = game.items?.ivElixir ?? 0;
     const sizePotionCount = game.items?.sizePotion ?? 0;
@@ -849,7 +854,6 @@ function renderDinoList(game, state, handlers) {
         </div>
       </div>
 
-      <!-- ステータス＆個体値（IV）3列グリッド -->
       <!-- ステータス＆個体値（IV）・努力値 3列グリッド -->
       <div class="card-stat-grid">
         <div class="stat-box">
@@ -882,16 +886,16 @@ function renderDinoList(game, state, handlers) {
 
       <div class="card-iv-total">個体値合計: <strong>${totalIv}</strong></div>
 
-      <!-- 横並び3連エサボタン -->
+      <!-- 横並び3連エサボタン（草食は植物系、それ以外は肉系に自動切替） -->
       <div class="card-feed-row">
-        <button class="feed-btn" data-type="raw" data-id="${dino.uid}" ${game.foods.raw <= 0 ? "disabled" : ""} title="生肉 (HP+5 / EXP+10)">
-          🍖 生肉
+        <button class="feed-btn" data-type="raw" data-id="${dino.uid}" ${game.foods.raw <= 0 ? "disabled" : ""} title="${fLabels.raw.name} (HP20%回復 / EXP+10)">
+          ${fLabels.raw.icon} ${fLabels.raw.shortName}
         </button>
-        <button class="feed-btn" data-type="good" data-id="${dino.uid}" ${game.foods.good <= 0 ? "disabled" : ""} title="上質肉 (HP+20 / EXP+30)">
-          🥩 上質
+        <button class="feed-btn" data-type="good" data-id="${dino.uid}" ${game.foods.good <= 0 ? "disabled" : ""} title="${fLabels.good.name} (HP50%回復 / EXP+30)">
+          ${fLabels.good.icon} ${fLabels.good.shortName}
         </button>
-        <button class="feed-btn" data-type="premium" data-id="${dino.uid}" ${game.foods.premium <= 0 ? "disabled" : ""} title="極上肉 (HP全快 / EXP+100)">
-          ✨ 極上
+        <button class="feed-btn" data-type="premium" data-id="${dino.uid}" ${game.foods.premium <= 0 ? "disabled" : ""} title="${fLabels.premium.name} (HP全快 / EXP+100)">
+          ${fLabels.premium.icon} ${fLabels.premium.shortName}
         </button>
       </div>
 

@@ -95,3 +95,20 @@ export function getTypePassive(typeId) {
       };
   }
 }
+
+// 恐竜のタイプに応じたエサ表示（草食は植物系、それ以外は肉系）を返す
+export function getFoodLabelsForType(typeId) {
+  if (typeId === "herbivore") {
+    return {
+      raw:     { icon: "🌿", name: "若葉",     shortName: "若葉" },
+      good:    { icon: "🍎", name: "甘い木の実", shortName: "木の実" },
+      premium: { icon: "✨", name: "黄金果実",   shortName: "黄金" }
+    };
+  }
+
+  return {
+    raw:     { icon: "🍖", name: "生肉",   shortName: "生肉" },
+    good:    { icon: "🥩", name: "上質肉", shortName: "上質" },
+    premium: { icon: "✨", name: "極上肉", shortName: "極上" }
+  };
+}
